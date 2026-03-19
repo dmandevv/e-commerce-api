@@ -113,7 +113,7 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: "docker-compose.prod.yml,gateway/nginx.conf"
+          source: "docker-compose.prod.yml,gateway/nginx.prod.conf"
           target: ~/ecommerce
 
       # ─── SSH and Deploy ──────────────────────────────────
