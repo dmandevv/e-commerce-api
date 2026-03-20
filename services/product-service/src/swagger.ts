@@ -62,7 +62,17 @@ const spec = {
                   properties: {
                     success: { type: 'boolean' },
                     data: { type: 'array', items: { $ref: '#/components/schemas/Product' } },
-                    count: { type: 'integer' },
+                    pagination: {
+                      type: 'object',
+                      properties: {
+                        page: { type: 'integer', example: 1 },
+                        perPage: { type: 'integer', example: 8 },
+                        totalCount: { type: 'integer', example: 38 },
+                        totalPages: { type: 'integer', example: 5 },
+                        hasNext: { type: 'boolean', example: true },
+                        hasPrev: { type: 'boolean', example: false },
+                      },
+                    },
                   },
                 },
               },

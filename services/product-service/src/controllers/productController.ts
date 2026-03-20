@@ -14,11 +14,12 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
     .pagination(resPerPage);
 
   const products = await apiFeatures.query;
+  const pagination = await apiFeatures.getPagination();
 
   res.status(200).json({
     success: true,
     data: products,
-    count: products.length,
+    pagination,
   });
 };
 
