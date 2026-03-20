@@ -14,3 +14,9 @@ Thumbs.db
 
 # TypeScript build info
 tsconfig.tsbuildinfo
+
+# Compiled scripts
+scripts/*.js
+scripts/*.js.map
+scripts/*.d.ts
+scripts/*.d.ts.map
