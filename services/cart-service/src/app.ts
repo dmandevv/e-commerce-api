@@ -1,12 +1,17 @@
 import express from 'express';
+import swaggerUi from 'swagger-ui-express';
 import { config } from './config/index.js';
 import { cartRepository } from './repositories/cartRepository.js';
 import cartRoutes from './routes/cartRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import swaggerSpec from './swagger.js';
 
 const app = express();
 
 app.use(express.json());
+
+// ─── API Docs ───────────────────────────────────────────
+app.use('/api/cart/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/api/cart', cartRoutes);
 
