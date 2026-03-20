@@ -5,10 +5,12 @@ import { config } from './config/index.js';
 import productRoutes from './routes/productRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import swaggerSpec from './swagger.js';
+import { requestId } from '@ecommerce/shared/middleware';
 
 const app = express();
 
 // ─── Middleware ──────────────────────────────────────────
+app.use(requestId);
 app.use(express.json());
 
 // ─── API Docs ───────────────────────────────────────────

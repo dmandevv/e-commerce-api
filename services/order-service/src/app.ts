@@ -6,9 +6,11 @@ import { startConsumer } from './events/consumer.js';
 import orderRoutes from './routes/orderRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import swaggerSpec from './swagger.js';
+import { requestId } from '@ecommerce/shared/middleware';
 
 const app = express();
 
+app.use(requestId);
 app.use(express.json());
 
 // ─── API Docs ───────────────────────────────────────────

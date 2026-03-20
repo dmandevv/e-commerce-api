@@ -9,10 +9,13 @@ import type { OrderPlacedEvent } from '@ecommerce/shared/events';
 const prisma = new PrismaClient();
 
 // ─── Place Order ────────────────────────────────────────
-export async function placeOrder(userId: string, token: string) {
+export async function placeOrder(userId: string, token: string, requestId?: string) {
   // 1. Fetch user's cart from cart-service
+  const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+  if (requestId) headers['X-Request-Id'] = requestId;
+
   const cartResponse = await fetch(`${config.cartServiceUrl}/api/cart`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers,
   });
 
   if (!cartResponse.ok) {
@@ -49,7 +52,7 @@ export async function placeOrder(userId: string, token: string) {
   // 3. Clear the cart after successful order
   await fetch(`${config.cartServiceUrl}/api/cart`, {
     method: 'DELETE',
-    headers: { Authorization: `Bearer ${token}` },
+    headers,
   });
 
   // 4. Publish event for payment-service and notification-service

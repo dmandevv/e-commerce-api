@@ -7,9 +7,20 @@ interface QueryString {
   [key: string]: any;
 }
 
+export interface PaginationInfo {
+  page: number;
+  perPage: number;
+  totalCount: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
 export class APIFeatures<T> {
   public query: Query<T[], T>;
   private queryStr: QueryString;
+  private _page = 1;
+  private _perPage = 8;
 
   constructor(query: Query<T[], T>, queryStr: QueryString) {
     this.query = query;
@@ -56,10 +67,25 @@ export class APIFeatures<T> {
   }
 
   pagination(resPerPage: number): this {
-    const currentPage = Number(this.queryStr.page) || 1;
-    const skip = resPerPage * (currentPage - 1);
+    this._page = Number(this.queryStr.page) || 1;
+    this._perPage = resPerPage;
+    const skip = resPerPage * (this._page - 1);
 
     this.query = this.query.limit(resPerPage).skip(skip);
     return this;
+  }
+
+  async getPagination(): Promise<PaginationInfo> {
+    const totalCount = await this.query.model.countDocuments(this.query.getFilter());
+    const totalPages = Math.ceil(totalCount / this._perPage);
+
+    return {
+      page: this._page,
+      perPage: this._perPage,
+      totalCount,
+      totalPages,
+      hasNext: this._page < totalPages,
+      hasPrev: this._page > 1,
+    };
   }
 }

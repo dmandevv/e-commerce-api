@@ -17,7 +17,9 @@
     "prisma:generate:order": "cd services/order-service && npx prisma generate && echo '{\"name\":\"@prisma/order-client\",\"main\":\"./index.js\",\"types\":\"./index.d.ts\"}' > node_modules/@prisma/order-client/package.json",
     "prisma:generate:payment": "cd services/payment-service && npx prisma generate && echo '{\"name\":\"@prisma/payment-client\",\"main\":\"./index.js\",\"types\":\"./index.d.ts\"}' > node_modules/@prisma/payment-client/package.json",
     "prisma:generate": "npm run prisma:generate:order && npm run prisma:generate:payment",
-    "postinstall": "if [ -d services/order-service ]; then npm run prisma:generate:order; fi && if [ -d services/payment-service ]; then npm run prisma:generate:payment; fi"
+    "postinstall": "if [ -d services/order-service ]; then npm run prisma:generate:order; fi && if [ -d services/payment-service ]; then npm run prisma:generate:payment; fi",
+    "seed": "npx tsx scripts/seed.ts",
+    "seed:fresh": "npx tsx scripts/seed.ts --fresh"
   },
   "devDependencies": {
     "@types/node": "^25.4.0",

@@ -8,8 +8,11 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import { asyncHandler } from './middleware/asyncHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import swaggerSpec from './swagger.js';
+import { requestId } from '@ecommerce/shared/middleware';
 
 const app = express();
+
+app.use(requestId);
 
 // Stripe webhook MUST come before express.json() — needs raw body
 app.post(
