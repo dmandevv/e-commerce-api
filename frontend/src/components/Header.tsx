@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Search, ShoppingCart, User, Menu } from "lucide-react";
+import { Search, ShoppingCart, User, Menu, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 const categories = [
   "Electronics",
@@ -16,6 +18,13 @@ const categories = [
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const router = useRouter();
+
+  function handleLogout() {
+    logout();
+    router.push("/");
+  }
 
   return (
     <header className="sticky top-0 z-50">
@@ -24,7 +33,7 @@ export default function Header() {
         <div className="container mx-auto flex items-center gap-4 px-4 py-2">
           {/* Logo */}
           <Link href="/" className="flex-shrink-0 text-xl font-bold tracking-tight hover:outline hover:outline-1 hover:outline-white rounded px-1 py-0.5">
-            dmandevv<span className="text-[#febd69]">.shop</span>
+            scamazon<span className="text-[#febd69]">.ca</span>
           </Link>
 
           {/* Search bar */}
@@ -52,13 +61,32 @@ export default function Header() {
 
           {/* Right actions */}
           <div className="flex items-center gap-2 ml-auto">
-            <Link
-              href="/auth/login"
-              className="hidden sm:flex flex-col text-xs hover:outline hover:outline-1 hover:outline-white rounded px-2 py-1"
-            >
-              <span className="text-[#ccc]">Hello, sign in</span>
-              <span className="font-bold text-sm">Account</span>
-            </Link>
+            {user ? (
+              <div className="hidden sm:flex items-center gap-2">
+                <Link
+                  href="/orders"
+                  className="flex flex-col text-xs hover:outline hover:outline-1 hover:outline-white rounded px-2 py-1"
+                >
+                  <span className="text-[#ccc]">Hello, {user.name}</span>
+                  <span className="font-bold text-sm">Account</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex flex-col text-xs hover:outline hover:outline-1 hover:outline-white rounded px-2 py-1"
+                >
+                  <span className="text-[#ccc]">Sign out</span>
+                  <span className="font-bold text-sm">Logout</span>
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/auth/login"
+                className="hidden sm:flex flex-col text-xs hover:outline hover:outline-1 hover:outline-white rounded px-2 py-1"
+              >
+                <span className="text-[#ccc]">Hello, sign in</span>
+                <span className="font-bold text-sm">Account</span>
+              </Link>
+            )}
 
             <Link
               href="/orders"
@@ -140,12 +168,26 @@ export default function Header() {
       {mobileMenuOpen && (
         <div className="sm:hidden bg-[#232f3e] text-white border-t border-white/10">
           <div className="px-4 py-3 space-y-2">
-            <Link href="/auth/login" className="flex items-center gap-2 py-2 hover:bg-white/10 rounded px-2">
-              <User className="h-5 w-5" /> Sign In
-            </Link>
-            <Link href="/orders" className="flex items-center gap-2 py-2 hover:bg-white/10 rounded px-2">
-              Orders
-            </Link>
+            {user ? (
+              <>
+                <div className="px-2 py-1 text-sm text-[#ccc]">
+                  Hello, {user.name}
+                </div>
+                <Link href="/orders" className="flex items-center gap-2 py-2 hover:bg-white/10 rounded px-2">
+                  Orders
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 py-2 hover:bg-white/10 rounded px-2 w-full text-left"
+                >
+                  <LogOut className="h-5 w-5" /> Sign Out
+                </button>
+              </>
+            ) : (
+              <Link href="/auth/login" className="flex items-center gap-2 py-2 hover:bg-white/10 rounded px-2">
+                <User className="h-5 w-5" /> Sign In
+              </Link>
+            )}
           </div>
         </div>
       )}

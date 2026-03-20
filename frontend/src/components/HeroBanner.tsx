@@ -7,11 +7,10 @@ export default function HeroBanner() {
       <div className="container mx-auto px-4 py-12 md:py-20">
         <div className="max-w-2xl">
           <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight">
-            Shop the Latest in Tech & More
+            Shop the latest fake products
           </h1>
           <p className="text-lg text-[#ccc] mb-6">
-            From electronics to everyday essentials — great deals, fast
-            delivery.
+            Seriously - nothing on here is real.
           </p>
           <Link href="/products">
             <Button className="bg-[#febd69] hover:bg-[#f3a847] text-black font-semibold px-8 h-12 text-base rounded-lg">

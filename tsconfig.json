@@ -15,7 +15,7 @@
     "resolveJsonModule": true,
     "composite": true
   },
-  "exclude": ["scripts"],
+  "exclude": ["scripts", "frontend"],
   "references": [
     { "path": "./shared" },
     { "path": "./services/user-service" },
