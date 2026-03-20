@@ -1,5 +1,4 @@
 import express from 'express';
-import cors from 'cors';
 import mongoose from 'mongoose';
 import swaggerUi from 'swagger-ui-express';
 import { config } from './config/index.js';
@@ -11,8 +10,8 @@ import { requestId } from '@ecommerce/shared/middleware';
 const app = express();
 
 // ─── Middleware ──────────────────────────────────────────
+// CORS is handled by the NGINX gateway — no need to set it here
 app.use(requestId);
-app.use(cors({ origin: config.clientUrl, credentials: true }));
 app.use(express.json());
 
 // ─── API Docs ───────────────────────────────────────────

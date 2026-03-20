@@ -15,8 +15,8 @@ Thumbs.db
 # TypeScript build info
 tsconfig.tsbuildinfo
 
-# Compiled scripts
-scripts/*.js
+# Compiled scripts (keep seed.js for production use)
+!scripts/seed.js
 scripts/*.js.map
 scripts/*.d.ts
 scripts/*.d.ts.map
