@@ -1,15 +1,20 @@
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
+import swaggerUi from 'swagger-ui-express';
 import { config } from './config/index.js';
 import userRoutes from './routes/userRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import swaggerSpec from './swagger.js';
 
 const app = express();
 
 // ─── Middleware ──────────────────────────────────────────
 app.use(cors({ origin: config.clientUrl, credentials: true }));
 app.use(express.json());
+
+// ─── API Docs ───────────────────────────────────────────
+app.use('/api/users/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ─── Routes ─────────────────────────────────────────────
 app.use('/api/users', userRoutes);

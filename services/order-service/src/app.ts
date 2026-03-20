@@ -1,13 +1,18 @@
 import express from 'express';
+import swaggerUi from 'swagger-ui-express';
 import { config } from './config/index.js';
 import { connectRabbitMQ } from './events/publisher.js';
 import { startConsumer } from './events/consumer.js';
 import orderRoutes from './routes/orderRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import swaggerSpec from './swagger.js';
 
 const app = express();
 
 app.use(express.json());
+
+// ─── API Docs ───────────────────────────────────────────
+app.use('/api/orders/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/api/orders', orderRoutes);
 

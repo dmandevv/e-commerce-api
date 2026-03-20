@@ -1,13 +1,18 @@
 import express from 'express';
 import mongoose from 'mongoose';
+import swaggerUi from 'swagger-ui-express';
 import { config } from './config/index.js';
 import productRoutes from './routes/productRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import swaggerSpec from './swagger.js';
 
 const app = express();
 
 // ─── Middleware ──────────────────────────────────────────
 app.use(express.json());
+
+// ─── API Docs ───────────────────────────────────────────
+app.use('/api/products/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ─── Routes ─────────────────────────────────────────────
 app.use('/api/products', productRoutes);
