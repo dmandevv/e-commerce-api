@@ -9,8 +9,19 @@ export interface Product {
   description: string;
   category: string;
   stock: number;
-  ratings: number;
+  rating: number;
   numOfReviews: number;
+  images: string[];
+  reviews: Review[];
+  createdAt: string;
+}
+
+export interface Review {
+  _id: string;
+  user: string;
+  name: string;
+  rating: number;
+  comment: string;
 }
 
 function StarRating({ rating }: { rating: number }) {
@@ -52,7 +63,7 @@ export default function ProductCard({ product }: { product: Product }) {
           </h3>
 
           <div className="flex items-center gap-1 mb-1">
-            <StarRating rating={product.ratings} />
+            <StarRating rating={product.rating} />
             <span className="text-xs text-[#007185]">
               {product.numOfReviews.toLocaleString()}
             </span>
