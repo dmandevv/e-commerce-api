@@ -6,10 +6,12 @@ import { config } from './config/index.js';
 import userRoutes from './routes/userRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import swaggerSpec from './swagger.js';
+import { requestId } from '@ecommerce/shared/middleware';
 
 const app = express();
 
 // ─── Middleware ──────────────────────────────────────────
+app.use(requestId);
 app.use(cors({ origin: config.clientUrl, credentials: true }));
 app.use(express.json());
 
