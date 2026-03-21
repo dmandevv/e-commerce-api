@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { cartRepository } from '../repositories/cartRepository.js';
-import { ValidationError } from '@ecommerce/shared/errors';
 
 // ─── Get Cart ───────────────────────────────────────────
 export const getCart = async (req: Request, res: Response): Promise<void> => {
@@ -13,15 +12,11 @@ export const getCart = async (req: Request, res: Response): Promise<void> => {
 export const addItem = async (req: Request, res: Response): Promise<void> => {
   const { productId, name, price, quantity, image } = req.body;
 
-  if (!productId || !name || !price || !quantity) {
-    throw new ValidationError('productId, name, price, and quantity are required');
-  }
-
   const cart = await cartRepository.addItem(req.user!.id, {
     productId,
     name,
-    price: Number(price),
-    quantity: Number(quantity),
+    price,
+    quantity,
     image: image || '',
   });
 
@@ -33,14 +28,10 @@ export const updateQuantity = async (req: Request<{ productId: string }>, res: R
   const { productId } = req.params;
   const { quantity } = req.body;
 
-  if (!quantity || quantity < 1) {
-    throw new ValidationError('Quantity must be at least 1');
-  }
-
   const cart = await cartRepository.updateQuantity(
     req.user!.id,
     productId,
-    Number(quantity)
+    quantity
   );
 
   res.status(200).json({ success: true, data: cart });

@@ -2,6 +2,33 @@ import Link from "next/link";
 import { Star } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
+const categoryEmoji: Record<string, string> = {
+  Electronics: "📱",
+  Computers: "💻",
+  "Smart Home": "🏠",
+  "Arts & Crafts": "🎨",
+  Automotive: "🚗",
+  Baby: "👶",
+  "Beauty & Personal Care": "💄",
+  Books: "📚",
+  Clothing: "👕",
+  Shoes: "👟",
+  Jewelry: "💍",
+  "Food & Grocery": "🍫",
+  Handmade: "🧶",
+  "Health & Household": "💊",
+  "Home & Kitchen": "🍳",
+  "Industrial & Scientific": "🔬",
+  Luggage: "🧳",
+  "Movies & TV": "🎬",
+  Music: "🎵",
+  "Pet Supplies": "🐾",
+  "Sports & Outdoors": "⚽",
+  "Tools & Home Improvement": "🔧",
+  "Toys & Games": "🎮",
+  "Video Games": "🕹️",
+};
+
 export interface Product {
   _id: string;
   name: string;
@@ -48,12 +75,7 @@ export default function ProductCard({ product }: { product: Product }) {
         {/* Image placeholder */}
         <div className="aspect-square bg-[#f7f7f7] flex items-center justify-center p-6 group-hover:scale-105 transition-transform overflow-hidden rounded-t-lg">
           <div className="text-4xl text-muted-foreground/30 font-light">
-            {product.category === "Electronics" && "📱"}
-            {product.category === "Cameras" && "📷"}
-            {product.category === "Laptops" && "💻"}
-            {product.category === "Accessories" && "🎧"}
-            {product.category === "Food" && "🍫"}
-            {!["Electronics", "Cameras", "Laptops", "Accessories", "Food"].includes(product.category) && "📦"}
+            {categoryEmoji[product.category] || "📦"}
           </div>
         </div>
 

@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+// Featured categories shown on the homepage
 const categories = [
-  { name: "Electronics", emoji: "📱", slug: "electronics" },
-  { name: "Cameras", emoji: "📷", slug: "cameras" },
-  { name: "Laptops", emoji: "💻", slug: "laptops" },
-  { name: "Accessories", emoji: "🎧", slug: "accessories" },
-  { name: "Food", emoji: "🍫", slug: "food" },
+  { name: "Electronics", emoji: "📱" },
+  { name: "Computers", emoji: "💻" },
+  { name: "Clothing", emoji: "👕" },
+  { name: "Home & Kitchen", emoji: "🏠" },
+  { name: "Books", emoji: "📚" },
 ];
 
 export default function CategoryCards() {
@@ -14,7 +15,7 @@ export default function CategoryCards() {
     <section className="container mx-auto px-4 -mt-8 relative z-10">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {categories.map((cat) => (
-          <Link key={cat.slug} href={`/products?category=${cat.slug}`}>
+          <Link key={cat.name} href={`/products?category=${cat.name.toLowerCase()}`}>
             <Card className="h-full hover:shadow-md transition-shadow bg-white cursor-pointer">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">{cat.name}</CardTitle>

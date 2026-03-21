@@ -8,6 +8,8 @@ import {
 } from '../controllers/cartController.js';
 import { authenticate } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
+import { validate } from '@ecommerce/shared/middleware';
+import { addItemSchema, updateQuantitySchema } from '../schemas/cartSchemas.js';
 
 const router = Router();
 
@@ -15,8 +17,8 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/', asyncHandler(getCart));
-router.post('/items', asyncHandler(addItem));
-router.patch('/items/:productId', asyncHandler(updateQuantity));
+router.post('/items', validate(addItemSchema), asyncHandler(addItem));
+router.patch('/items/:productId', validate(updateQuantitySchema), asyncHandler(updateQuantity));
 router.delete('/items/:productId', asyncHandler(removeItem));
 router.delete('/', asyncHandler(clearCart));
 

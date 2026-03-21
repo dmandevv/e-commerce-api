@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { placeOrder, getOrder, getMyOrders, updateStatus } from '../controllers/orderController.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
+import { validate } from '@ecommerce/shared/middleware';
+import { updateStatusSchema } from '../schemas/orderSchemas.js';
 
 const router = Router();
 
@@ -12,6 +14,6 @@ router.get('/mine', asyncHandler(getMyOrders));
 router.get('/:id', asyncHandler(getOrder));
 
 // Admin only
-router.patch('/:id/status', authorize('admin'), asyncHandler(updateStatus));
+router.patch('/:id/status', authorize('admin'), validate(updateStatusSchema), asyncHandler(updateStatus));
 
 export default router;
