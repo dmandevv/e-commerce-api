@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { PRODUCT_CATEGORIES } from '@ecommerce/shared';
 
 export interface IReview {
   userId: string;
@@ -42,7 +43,7 @@ const productSchema = new Schema<IProductDocument>(
       type: String,
       required: [true, 'Please select category for product'],
       enum: {
-        values: ['Electronics', 'Cameras', 'Laptops', 'Accessories', 'Food'],
+        values: [...PRODUCT_CATEGORIES],
         message: 'Please select correct category',
       },
     },

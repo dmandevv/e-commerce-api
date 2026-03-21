@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { Product } from '../models/Product.js';
 import { APIFeatures } from '../utils/apiFeatures.js';
-import { NotFoundError, ValidationError } from '@ecommerce/shared/errors';
+import { NotFoundError } from '@ecommerce/shared/errors';
 
 // ─── Get All Products (public) ──────────────────────────
 export const getProducts = async (req: Request, res: Response): Promise<void> => {
@@ -74,10 +74,6 @@ export const deleteProduct = async (req: Request, res: Response): Promise<void> 
 export const createProductReview = async (req: Request, res: Response): Promise<void> => {
   const { rating, comment, productId } = req.body;
 
-  if (!rating || !productId) {
-    throw new ValidationError('Rating and productId are required');
-  }
-
   const product = await Product.findById(productId);
 
   if (!product) {
@@ -97,7 +93,7 @@ export const createProductReview = async (req: Request, res: Response): Promise<
     product.reviews.push({
       userId: req.user!.id,
       name: req.body.name || 'Anonymous',
-      rating: Number(rating),
+      rating,
       comment,
     });
   }

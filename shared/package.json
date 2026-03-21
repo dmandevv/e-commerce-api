@@ -30,5 +30,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
   }
 }

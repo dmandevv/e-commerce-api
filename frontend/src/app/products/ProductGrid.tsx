@@ -1,8 +1,7 @@
 import ProductCard, { type Product } from "@/components/ProductCard";
 import { apiFetch } from "@/lib/api";
 import Link from "next/link";
-
-const categories = ["Electronics", "Cameras", "Laptops", "Accessories", "Food"];
+import { PRODUCT_CATEGORIES } from "@/lib/constants";
 
 interface ProductsResponse {
   success: boolean;
@@ -71,7 +70,7 @@ export default async function ProductGrid({
         <span className="mx-1">/</span>
         <span className="text-foreground">
           {activeCategory
-            ? categories.find((c) => c.toLowerCase() === activeCategory) || "Products"
+            ? PRODUCT_CATEGORIES.find((c) => c.toLowerCase() === activeCategory) || "Products"
             : "All Products"}
         </span>
       </nav>
@@ -90,7 +89,7 @@ export default async function ProductGrid({
           >
             All
           </Link>
-          {categories.map((cat) => (
+          {PRODUCT_CATEGORIES.map((cat) => (
             <Link
               key={cat}
               href={buildUrl({ category: cat.toLowerCase(), page: undefined })}

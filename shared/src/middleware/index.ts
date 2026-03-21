@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import type { Request, Response, NextFunction } from 'express';
+import { ZodType, ZodError } from 'zod';
 
 // Declared here because the shared package compiles independently
 // from the services. It doesn't see their express.d.ts augmentations,
@@ -22,4 +23,28 @@ export function requestId(req: Request, res: Response, next: NextFunction): void
   req.requestId = id;
   res.setHeader('X-Request-Id', id);
   next();
+}
+
+/**
+ * Validates req.body against a Zod schema.
+ * Returns 400 with field-level errors if validation fails.
+ * Replaces req.body with the parsed (clean) data if validation passes.
+ */
+export function validate(schema: ZodType) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    try {
+      req.body = schema.parse(req.body);
+      next();
+    } catch (err) {
+      if (err instanceof ZodError) {
+        const errors = err.issues.map((issue) => ({
+          field: issue.path.join('.'),
+          message: issue.message,
+        }));
+        res.status(400).json({ success: false, errors });
+        return;
+      }
+      next(err);
+    }
+  };
 }

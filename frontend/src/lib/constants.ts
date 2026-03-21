@@ -1,0 +1,28 @@
+// Single source of truth for frontend constants.
+// Keep in sync with shared/src/constants.ts
+export const PRODUCT_CATEGORIES = [
+  'Electronics',
+  'Computers',
+  'Smart Home',
+  'Arts & Crafts',
+  'Automotive',
+  'Baby',
+  'Beauty & Personal Care',
+  'Books',
+  'Clothing',
+  'Shoes',
+  'Jewelry',
+  'Food & Grocery',
+  'Handmade',
+  'Health & Household',
+  'Home & Kitchen',
+  'Industrial & Scientific',
+  'Luggage',
+  'Movies & TV',
+  'Music',
+  'Pet Supplies',
+  'Sports & Outdoors',
+  'Tools & Home Improvement',
+  'Toys & Games',
+  'Video Games',
+] as const;

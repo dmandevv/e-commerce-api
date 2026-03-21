@@ -7,14 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-
-const categories = [
-  "Electronics",
-  "Cameras",
-  "Laptops",
-  "Accessories",
-  "Food",
-];
+import { PRODUCT_CATEGORIES } from "@/lib/constants";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -41,7 +34,7 @@ export default function Header() {
             <div className="flex w-full">
               <select className="rounded-l-md bg-[#e6e6e6] text-[#555] text-xs px-2 border-none focus:outline-none cursor-pointer">
                 <option>All</option>
-                {categories.map((cat) => (
+                {PRODUCT_CATEGORIES.map((cat) => (
                   <option key={cat}>{cat}</option>
                 ))}
               </select>
@@ -142,7 +135,7 @@ export default function Header() {
       <nav className="bg-[#232f3e] text-white text-sm">
         <div className="container mx-auto px-4">
           <ul className="flex items-center gap-1 overflow-x-auto py-1 scrollbar-hide">
-            {categories.map((cat) => (
+            {PRODUCT_CATEGORIES.map((cat) => (
               <li key={cat}>
                 <Link
                   href={`/products?category=${cat.toLowerCase()}`}
