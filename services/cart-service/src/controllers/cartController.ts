@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { cartRepository } from '../repositories/cartRepository.js';
+import { config } from '../config/index.js';
+import { NotFoundError, ValidationError } from '@ecommerce/shared/errors';
 
 // ─── Get Cart ───────────────────────────────────────────
 export const getCart = async (req: Request, res: Response): Promise<void> => {
@@ -10,14 +12,26 @@ export const getCart = async (req: Request, res: Response): Promise<void> => {
 
 // ─── Add Item to Cart ───────────────────────────────────
 export const addItem = async (req: Request, res: Response): Promise<void> => {
-  const { productId, name, price, quantity, image } = req.body;
+  const { productId, quantity } = req.body;
+
+  // Fetch the real product from product-service (not trusting client data)
+  const productRes = await fetch(`${config.productServiceUrl}/api/products/${productId}`);
+  if (!productRes.ok) {
+    throw new NotFoundError('Product');
+  }
+
+  const { data: product } = await productRes.json();
+
+  if (product.stock < quantity) {
+    throw new ValidationError(`Only ${product.stock} items in stock`);
+  }
 
   const cart = await cartRepository.addItem(req.user!.id, {
     productId,
-    name,
-    price,
+    name: product.name,
+    price: product.price,
     quantity,
-    image: image || '',
+    image: product.images?.[0]?.url || '',
   });
 
   res.status(200).json({ success: true, data: cart });

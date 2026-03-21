@@ -17,11 +17,13 @@ interface Config {
     pass: string;
   };
   fromEmail: string;
+  userServiceUrl: string;
 }
 
 export const config: Config = {
   port: parseInt(process.env.PORT || '3006', 10),
   rabbitmqUrl: process.env.RABBITMQ_URL || 'amqp://admin:admin_password@localhost:5672',
+  userServiceUrl: process.env.USER_SERVICE_URL || 'http://user-service:3001',
   smtp: {
     host: process.env.SMTP_HOST || '',
     port: parseInt(process.env.SMTP_PORT || '587', 10),
