@@ -43,7 +43,7 @@ export default function AddToCartButton({
         setMessage("Added to cart!");
       } else {
         const data = await res.json().catch(() => null);
-        setMessage(data?.message || "Failed to add to cart");
+        setMessage(data?.message || data?.errors?.[0]?.message || "Failed to add to cart");
       }
     } catch {
       setMessage("Failed to add to cart");

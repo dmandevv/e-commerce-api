@@ -13,6 +13,7 @@ interface Config {
   jwtSecret: string;
   rabbitmqUrl: string;
   cartTtl: number;
+  productServiceUrl: string;
 }
 
 export const config: Config = {
@@ -21,6 +22,7 @@ export const config: Config = {
   jwtSecret: process.env.JWT_SECRET || '',
   rabbitmqUrl: process.env.RABBITMQ_URL || 'amqp://admin:admin_password@localhost:5672',
   cartTtl: parseInt(process.env.CART_TTL || '259200', 10), // 72 hours in seconds
+  productServiceUrl: process.env.PRODUCT_SERVICE_URL || 'http://product-service:3002',
 };
 
 if (!config.jwtSecret) {

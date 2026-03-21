@@ -71,6 +71,23 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   res.status(200).json(response);
 };
 
+// ─── Internal: Get User by ID (service-to-service, no auth) ─
+export const getUserById = async (req: Request, res: Response): Promise<void> => {
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    throw new NotFoundError('User');
+  }
+
+  res.status(200).json({
+    success: true,
+    data: {
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+    },
+  });
+};
+
 // ─── Get Profile ────────────────────────────────────────
 export const getProfile = async (req: Request, res: Response): Promise<void> => {
   const user = await User.findById(req.user?.id);

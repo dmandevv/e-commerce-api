@@ -10,6 +10,19 @@ import type {
   OrderStatusUpdatedEvent,
 } from '@ecommerce/shared/events';
 
+// Look up a user's email from user-service
+async function getUserEmail(userId: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${config.userServiceUrl}/api/users/internal/${userId}`);
+    if (!res.ok) return null;
+    const { data } = await res.json();
+    return data.email;
+  } catch {
+    console.error(`Failed to fetch email for user ${userId}`);
+    return null;
+  }
+}
+
 const EXCHANGE = 'ecommerce.events';
 const QUEUE = 'notification-service.events';
 
@@ -73,48 +86,54 @@ export async function startConsumer(): Promise<void> {
 
         case 'order.placed': {
           const event = data as OrderPlacedEvent;
+          const email = await getUserEmail(event.userId);
+          if (!email) { console.warn(`No email found for user ${event.userId}, skipping`); break; }
           const { subject, html } = templates.orderConfirmation(
             event.orderId,
             event.total,
             event.items.length
           );
-          // Note: we'd need the user's email here — for now log it
-          // In production, either the event includes email or we call user-service
-          console.log(`Order confirmation for order ${event.orderId}`);
-          await sendEmail('customer@example.com', subject, html);
+          await sendEmail(email, subject, html);
+          console.log(`Order confirmation sent to ${email}`);
           break;
         }
 
         case 'payment.completed': {
           const event = data as PaymentCompletedEvent;
+          const email = await getUserEmail(event.userId);
+          if (!email) { console.warn(`No email found for user ${event.userId}, skipping`); break; }
           const { subject, html } = templates.paymentReceipt(
             event.orderId,
             event.amount
           );
-          console.log(`Payment receipt for order ${event.orderId}`);
-          await sendEmail('customer@example.com', subject, html);
+          await sendEmail(email, subject, html);
+          console.log(`Payment receipt sent to ${email}`);
           break;
         }
 
         case 'payment.failed': {
           const event = data as PaymentFailedEvent;
+          const email = await getUserEmail(event.userId);
+          if (!email) { console.warn(`No email found for user ${event.userId}, skipping`); break; }
           const { subject, html } = templates.paymentFailed(
             event.orderId,
             event.reason
           );
-          console.log(`Payment failure alert for order ${event.orderId}`);
-          await sendEmail('customer@example.com', subject, html);
+          await sendEmail(email, subject, html);
+          console.log(`Payment failure alert sent to ${email}`);
           break;
         }
 
         case 'order.status_updated': {
           const event = data as OrderStatusUpdatedEvent;
+          const email = await getUserEmail(event.userId);
+          if (!email) { console.warn(`No email found for user ${event.userId}, skipping`); break; }
           const { subject, html } = templates.orderStatusUpdate(
             event.orderId,
             event.newStatus
           );
-          console.log(`Status update email for order ${event.orderId}`);
-          await sendEmail('customer@example.com', subject, html);
+          await sendEmail(email, subject, html);
+          console.log(`Status update sent to ${email}`);
           break;
         }
 

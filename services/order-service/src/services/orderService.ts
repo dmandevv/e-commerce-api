@@ -28,19 +28,48 @@ export async function placeOrder(userId: string, token: string, requestId?: stri
     throw new ValidationError('Cart is empty');
   }
 
-  // 2. Create order with items in a transaction
+  // 2. Verify each product exists, has stock, and get real prices
+  const verifiedItems = await Promise.all(
+    cart.items.map(async (item) => {
+      const res = await fetch(
+        `${config.productServiceUrl}/api/products/${item.productId}`,
+        { headers: requestId ? { 'X-Request-Id': requestId } : {} }
+      );
+
+      if (!res.ok) {
+        throw new ValidationError(`Product "${item.name}" is no longer available`);
+      }
+
+      const { data: product } = await res.json();
+
+      if (product.stock < item.quantity) {
+        throw new ValidationError(
+          `"${product.name}" only has ${product.stock} in stock (requested ${item.quantity})`
+        );
+      }
+
+      return {
+        productId: item.productId,
+        name: product.name,
+        price: product.price,
+        quantity: item.quantity,
+      };
+    })
+  );
+
+  // Recalculate total from verified prices
+  const total = Math.round(
+    verifiedItems.reduce((sum, item) => sum + item.price * item.quantity, 0) * 100
+  ) / 100;
+
+  // 3. Create order with verified data
   const order = await prisma.$transaction(async (tx) => {
     const created = await tx.order.create({
       data: {
         userId,
-        total: cart.total,
+        total,
         items: {
-          create: cart.items.map((item) => ({
-            productId: item.productId,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-          })),
+          create: verifiedItems,
         },
       },
       include: { items: true },
@@ -49,13 +78,13 @@ export async function placeOrder(userId: string, token: string, requestId?: stri
     return created;
   });
 
-  // 3. Clear the cart after successful order
+  // 4. Clear the cart after successful order
   await fetch(`${config.cartServiceUrl}/api/cart`, {
     method: 'DELETE',
     headers,
   });
 
-  // 4. Publish event for payment-service and notification-service
+  // 5. Publish event for payment-service and notification-service
   const event: OrderPlacedEvent = {
     orderId: order.id,
     userId,
