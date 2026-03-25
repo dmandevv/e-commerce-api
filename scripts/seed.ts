@@ -14,7 +14,7 @@ import bcrypt from 'bcryptjs';
 // ─── Config ──────────────────────────────────────────────
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://admin:admin_password@localhost:27017';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'dev@dmandevv.shop';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin1234';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@Ecom2026!';
 const ADMIN_NAME = process.env.ADMIN_NAME || 'Admin';
 
 // ─── Products ────────────────────────────────────────────
