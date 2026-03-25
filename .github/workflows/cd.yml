@@ -33,6 +33,7 @@ jobs:
           - order-service
           - payment-service
           - notification-service
+          - health-service
 
     steps:
       - name: Checkout code

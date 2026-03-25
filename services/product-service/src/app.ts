@@ -6,11 +6,13 @@ import productRoutes from './routes/productRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import swaggerSpec from './swagger.js';
 import { requestId } from '@ecommerce/shared/middleware';
+import { metricsMiddleware, metricsEndpoint } from '@ecommerce/shared/metrics';
 
 const app = express();
 
 // ─── Middleware ──────────────────────────────────────────
 app.use(requestId);
+app.use(metricsMiddleware('product-service'));
 app.use(express.json());
 
 // ─── API Docs ───────────────────────────────────────────
@@ -23,6 +25,7 @@ app.use('/api/products', productRoutes);
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'product-service' });
 });
+app.get('/metrics', metricsEndpoint);
 
 // ─── Error Handler (must be last) ───────────────────────
 app.use(errorHandler);

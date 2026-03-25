@@ -46,6 +46,14 @@ else
   exit 1
 fi
 
+# Verify the health dashboard aggregates all services
+if response=$(curl -sf --max-time 10 "http://localhost:80/api/health/status" 2>/dev/null); then
+  echo "  [PASS] Health Dashboard — $response"
+else
+  echo "  [FAIL] Health dashboard not responding"
+  exit 1
+fi
+
 echo ""
 echo "=== All checks passed ==="
 echo ""

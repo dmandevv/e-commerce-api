@@ -23,6 +23,7 @@
     { "path": "./services/cart-service" },
     { "path": "./services/order-service" },
     { "path": "./services/payment-service" },
-    { "path": "./services/notification-service" }
+    { "path": "./services/notification-service" },
+    { "path": "./services/health-service" }
   ]
 }
