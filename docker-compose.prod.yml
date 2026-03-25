@@ -238,6 +238,34 @@ services:
     networks:
       - ecommerce-network
 
+  health-service:
+    image: ${GHCR_REPO}/health-service:latest
+    container_name: ecommerce-health-service
+    restart: unless-stopped
+    environment:
+      PORT: 3007
+    depends_on:
+      user-service:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+      cart-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+    healthcheck:
+      test: wget -qO- http://127.0.0.1:3007/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - ecommerce-network
+
   notification-service:
     image: ${GHCR_REPO}/notification-service:latest
     container_name: ecommerce-notification-service

@@ -1,0 +1,39 @@
+# Prometheus scrape configuration
+# Prometheus pulls metrics FROM each service (pull model).
+# Every scrape_interval, it visits each target's /metrics endpoint.
+
+global:
+  scrape_interval: 15s     # How often to collect metrics
+  evaluation_interval: 15s # How often to evaluate alerting rules (future use)
+
+scrape_configs:
+  # Each job groups related targets. The job name becomes a label
+  # in Prometheus, so you can filter by job in Grafana queries.
+
+  - job_name: 'user-service'
+    static_configs:
+      - targets: ['user-service:3001']
+
+  - job_name: 'product-service'
+    static_configs:
+      - targets: ['product-service:3002']
+
+  - job_name: 'cart-service'
+    static_configs:
+      - targets: ['cart-service:3003']
+
+  - job_name: 'order-service'
+    static_configs:
+      - targets: ['order-service:3004']
+
+  - job_name: 'payment-service'
+    static_configs:
+      - targets: ['payment-service:3005']
+
+  - job_name: 'notification-service'
+    static_configs:
+      - targets: ['notification-service:3006']
+
+  - job_name: 'health-service'
+    static_configs:
+      - targets: ['health-service:3007']

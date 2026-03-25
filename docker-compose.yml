@@ -241,6 +241,36 @@ services:
     networks:
       - ecommerce-network
 
+  health-service:
+    build:
+      context: .
+      dockerfile: services/health-service/Dockerfile
+    container_name: ecommerce-health-service
+    restart: unless-stopped
+    environment:
+      PORT: 3007
+    depends_on:
+      user-service:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+      cart-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+    healthcheck:
+      test: wget -qO- http://127.0.0.1:3007/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - ecommerce-network
+
   notification-service:
     build:
       context: .
@@ -267,11 +297,115 @@ services:
     networks:
       - ecommerce-network
 
+  # ─── Monitoring ──────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ecommerce-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - ecommerce-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ecommerce-grafana
+    restart: unless-stopped
+    ports:
+      - "3030:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - ecommerce-network
+
+  # ─── Centralized Logging (EFK) ───────────────────────────
+  # profiles: [logging] — only starts with `docker compose --profile logging up`
+  #
+  # WHY profiles?
+  # EFK needs ~1-2GB RAM and 30-60s to start. CI runs
+  # `docker compose up --build --wait` which starts EVERY container.
+  # Without profiles, CI would start EFK too — risking OOM kills
+  # on GitHub Actions free runners (7GB total). Profiles make
+  # these containers invisible unless you opt in.
+  #
+  # WHY file tailing instead of Docker logging driver?
+  # The "obvious" approach is setting each service's logging driver
+  # to fluentd — but that means:
+  #   1. Services fail to start if Fluentd isn't running
+  #   2. `docker logs` stops working (logs go to Fluentd, not disk)
+  #   3. CI breaks because Fluentd isn't started (profiles)
+  # Instead, Fluentd tails Docker's default JSON log files at
+  # /var/lib/docker/containers/. Services log to stdout as normal,
+  # Docker writes to disk, Fluentd reads from disk. Everyone is
+  # decoupled — services work with or without Fluentd.
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    container_name: ecommerce-elasticsearch
+    restart: unless-stopped
+    profiles: [logging]
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: wget -qO- http://127.0.0.1:9200/_cluster/health || exit 1
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - ecommerce-network
+
+  fluentd:
+    build: ./monitoring/fluentd
+    container_name: ecommerce-fluentd
+    restart: unless-stopped
+    profiles: [logging]
+    volumes:
+      - ./monitoring/fluentd/fluent.conf:/fluentd/etc/fluent.conf:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.0
+    container_name: ecommerce-kibana
+    restart: unless-stopped
+    profiles: [logging]
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+
 volumes:
   mongodb_data:
   postgres_data:
   redis_data:
   rabbitmq_data:
+  prometheus_data:
+  grafana_data:
+  elasticsearch_data:
 
 networks:
   ecommerce-network:

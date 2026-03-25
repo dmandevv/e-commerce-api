@@ -5,6 +5,7 @@
   "workspaces": [
     "shared",
     "services/cart-service",
+    "services/health-service",
     "services/notification-service",
     "services/order-service",
     "services/payment-service",
