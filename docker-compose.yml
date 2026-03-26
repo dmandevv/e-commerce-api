@@ -302,6 +302,23 @@ services:
     networks:
       - ecommerce-network
 
+  # ─── Tools (on-demand only) ──────────────────────────────
+  # profiles: [tools] — never starts with `docker compose up`.
+  # Run manually: docker compose run --rm seed
+  seed:
+    build:
+      context: .
+      dockerfile: scripts/Dockerfile
+    container_name: ecommerce-seed
+    profiles: [tools]
+    environment:
+      MONGO_URI: mongodb://admin:admin_password@mongodb:27017
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+
   # ─── Monitoring ──────────────────────────────────────────
   prometheus:
     image: prom/prometheus:latest

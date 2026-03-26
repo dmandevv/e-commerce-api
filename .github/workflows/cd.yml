@@ -35,6 +35,7 @@ jobs:
           - notification-service
           - health-service
           - gateway
+          - seed
 
     steps:
       - name: Checkout code
@@ -76,8 +77,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          # Gateway Dockerfile lives at gateway/Dockerfile, not services/gateway/
-          file: ${{ matrix.service == 'gateway' && 'gateway/Dockerfile' || format('services/{0}/Dockerfile', matrix.service) }}
+          # gateway → gateway/Dockerfile, seed → scripts/Dockerfile, others → services/<name>/Dockerfile
+          file: ${{ matrix.service == 'gateway' && 'gateway/Dockerfile' || matrix.service == 'seed' && 'scripts/Dockerfile' || format('services/{0}/Dockerfile', matrix.service) }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
