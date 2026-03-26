@@ -1,7 +1,9 @@
 import amqplib, { type Channel } from 'amqplib';
+import type { Server as SocketServer } from 'socket.io';
 import { config } from '../config/index.js';
 import { sendEmail } from '../services/emailService.js';
 import * as templates from '../templates/index.js';
+import { CircuitBreaker } from '@ecommerce/shared';
 import type {
   UserRegisteredEvent,
   OrderPlacedEvent,
@@ -10,10 +12,16 @@ import type {
   OrderStatusUpdatedEvent,
 } from '@ecommerce/shared/events';
 
-// Look up a user's email from user-service
+const userBreaker = new CircuitBreaker({ name: 'user-service' });
+
+// Look up a user's email from user-service.
+// Wrapped in circuit breaker — if user-service is down, we skip
+// notifications quickly instead of timing out on every event.
 async function getUserEmail(userId: string): Promise<string | null> {
   try {
-    const res = await fetch(`${config.userServiceUrl}/api/users/internal/${userId}`);
+    const res = await userBreaker.fire(() =>
+      fetch(`${config.userServiceUrl}/api/users/internal/${userId}`)
+    );
     if (!res.ok) return null;
     const { data } = await res.json();
     return data.email;
@@ -50,7 +58,7 @@ async function connectWithRetry(url: string, maxRetries = 10): Promise<amqplib.C
   throw new Error(`Failed to connect to RabbitMQ after ${maxRetries} attempts`);
 }
 
-export async function startConsumer(): Promise<void> {
+export async function startConsumer(io: SocketServer): Promise<void> {
   const connection = await connectWithRetry(config.rabbitmqUrl);
   const channel: Channel = await connection.createChannel();
 
@@ -94,6 +102,14 @@ export async function startConsumer(): Promise<void> {
             event.items.length
           );
           await sendEmail(email, subject, html);
+          // Push real-time notification to the user's browser.
+          // io.to(userId) targets only sockets in that user's room.
+          // If the user isn't connected, this is a no-op (no error).
+          io.to(event.userId).emit('notification', {
+            type: 'order.placed',
+            message: `Order ${event.orderId} confirmed`,
+            orderId: event.orderId,
+          });
           console.log(`Order confirmation sent to ${email}`);
           break;
         }
@@ -107,6 +123,11 @@ export async function startConsumer(): Promise<void> {
             event.amount
           );
           await sendEmail(email, subject, html);
+          io.to(event.userId).emit('notification', {
+            type: 'payment.completed',
+            message: `Payment received for order ${event.orderId}`,
+            orderId: event.orderId,
+          });
           console.log(`Payment receipt sent to ${email}`);
           break;
         }
@@ -120,6 +141,12 @@ export async function startConsumer(): Promise<void> {
             event.reason
           );
           await sendEmail(email, subject, html);
+          io.to(event.userId).emit('notification', {
+            type: 'payment.failed',
+            message: `Payment failed for order ${event.orderId}`,
+            orderId: event.orderId,
+            reason: event.reason,
+          });
           console.log(`Payment failure alert sent to ${email}`);
           break;
         }
@@ -133,6 +160,12 @@ export async function startConsumer(): Promise<void> {
             event.newStatus
           );
           await sendEmail(email, subject, html);
+          io.to(event.userId).emit('notification', {
+            type: 'order.status_updated',
+            message: `Order ${event.orderId} is now ${event.newStatus}`,
+            orderId: event.orderId,
+            status: event.newStatus,
+          });
           console.log(`Status update sent to ${email}`);
           break;
         }
