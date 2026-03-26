@@ -305,6 +305,23 @@ services:
     networks:
       - ecommerce-network
 
+  # ─── Tools (on-demand only) ──────────────────────────────
+  # profiles: [tools] — never starts with `docker compose up`.
+  # Run manually:
+  #   docker compose -f docker-compose.prod.yml run --rm seed
+  seed:
+    image: ${GHCR_REPO}/seed:latest
+    container_name: ecommerce-seed
+    profiles: [tools]
+    environment:
+      MONGO_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb:27017
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@Ecom2026!}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+
 volumes:
   mongodb_data:
   postgres_data:

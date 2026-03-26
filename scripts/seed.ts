@@ -169,19 +169,16 @@ async function seed() {
   }, { timestamps: true });
   const User = userConn.model('User', UserSchema);
 
-  const existingAdmin = await User.findOne({ email: ADMIN_EMAIL });
-  if (existingAdmin) {
-    console.log(`✓ Admin user already exists (${ADMIN_EMAIL})`);
-  } else {
-    const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
-    await User.create({
-      name: ADMIN_NAME,
-      email: ADMIN_EMAIL,
-      password: hashedPassword,
-      role: 'admin',
-    });
-    console.log(`✓ Admin user created (${ADMIN_EMAIL} / ${ADMIN_PASSWORD})`);
-  }
+  // Upsert: create admin if missing, reset password if exists.
+  // This makes the seed idempotent — run it anytime to reset
+  // the admin to a known password. No more locked-out admins.
+  const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
+  await User.findOneAndUpdate(
+    { email: ADMIN_EMAIL },
+    { name: ADMIN_NAME, password: hashedPassword, role: 'admin' },
+    { upsert: true, new: true },
+  );
+  console.log(`✓ Admin user upserted (${ADMIN_EMAIL} / ${ADMIN_PASSWORD})`);
 
   // --- Products ---
   const productConn = await mongoose.createConnection(`${MONGO_URI}/product-service?authSource=admin`).asPromise();
