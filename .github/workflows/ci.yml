@@ -67,6 +67,7 @@ jobs:
           - payment-service
           - notification-service
           - health-service
+          - gateway
 
     steps:
       - name: Checkout code
@@ -78,7 +79,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: services/${{ matrix.service }}/Dockerfile
+          # Gateway Dockerfile lives at gateway/Dockerfile, not services/gateway/
+          file: ${{ matrix.service == 'gateway' && 'gateway/Dockerfile' || format('services/{0}/Dockerfile', matrix.service) }}
           push: false
           load: true
           tags: ecommerce/${{ matrix.service }}:test
