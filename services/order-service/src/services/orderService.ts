@@ -3,10 +3,16 @@ import { config } from '../config/index.js';
 import { publishEvent } from '../events/publisher.js';
 import { EventNames } from '@ecommerce/shared/events';
 import { NotFoundError, ValidationError } from '@ecommerce/shared/errors';
+import { CircuitBreaker } from '@ecommerce/shared';
 import type { ICart } from '@ecommerce/shared/types';
 import type { OrderPlacedEvent } from '@ecommerce/shared/events';
 
 const prisma = new PrismaClient();
+
+// Separate breaker per downstream service.
+// cart-service being down shouldn't affect product-service calls and vice versa.
+const cartBreaker = new CircuitBreaker({ name: 'cart-service' });
+const productBreaker = new CircuitBreaker({ name: 'product-service' });
 
 // ─── Place Order ────────────────────────────────────────
 export async function placeOrder(userId: string, token: string, requestId?: string) {
@@ -14,9 +20,11 @@ export async function placeOrder(userId: string, token: string, requestId?: stri
   const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
   if (requestId) headers['X-Request-Id'] = requestId;
 
-  const cartResponse = await fetch(`${config.cartServiceUrl}/api/cart`, {
-    headers,
-  });
+  // Cart fetch wrapped in breaker — if cart-service has been failing,
+  // we fail fast instead of making the user wait for a timeout.
+  const cartResponse = await cartBreaker.fire(() =>
+    fetch(`${config.cartServiceUrl}/api/cart`, { headers })
+  );
 
   if (!cartResponse.ok) {
     throw new ValidationError('Failed to fetch cart');
@@ -31,9 +39,14 @@ export async function placeOrder(userId: string, token: string, requestId?: stri
   // 2. Verify each product exists, has stock, and get real prices
   const verifiedItems = await Promise.all(
     cart.items.map(async (item) => {
-      const res = await fetch(
-        `${config.productServiceUrl}/api/products/${item.productId}`,
-        { headers: requestId ? { 'X-Request-Id': requestId } : {} }
+      // Each product verification goes through the same breaker instance.
+      // If product-service is down, the first few items fail and trip the breaker,
+      // then remaining items fail instantly instead of each waiting for timeout.
+      const res = await productBreaker.fire(() =>
+        fetch(
+          `${config.productServiceUrl}/api/products/${item.productId}`,
+          { headers: requestId ? { 'X-Request-Id': requestId } : {} }
+        )
       );
 
       if (!res.ok) {
@@ -78,11 +91,17 @@ export async function placeOrder(userId: string, token: string, requestId?: stri
     return created;
   });
 
-  // 4. Clear the cart after successful order
-  await fetch(`${config.cartServiceUrl}/api/cart`, {
-    method: 'DELETE',
-    headers,
-  });
+  // 4. Clear the cart after successful order.
+  // Wrapped in breaker but also in try/catch — if clearing fails,
+  // the order was already created. Better to have a stale cart
+  // than to fail the entire order.
+  try {
+    await cartBreaker.fire(() =>
+      fetch(`${config.cartServiceUrl}/api/cart`, { method: 'DELETE', headers })
+    );
+  } catch {
+    console.error('Failed to clear cart after order — cart may be stale');
+  }
 
   // 5. Publish event for payment-service and notification-service
   const event: OrderPlacedEvent = {

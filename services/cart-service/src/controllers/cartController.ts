@@ -2,6 +2,12 @@ import { Request, Response } from 'express';
 import { cartRepository } from '../repositories/cartRepository.js';
 import { config } from '../config/index.js';
 import { NotFoundError, ValidationError } from '@ecommerce/shared/errors';
+import { CircuitBreaker } from '@ecommerce/shared';
+
+// One breaker instance per downstream service.
+// Created at module level so it persists across requests —
+// if request #5 trips the breaker, request #6 sees it as OPEN.
+const productBreaker = new CircuitBreaker({ name: 'product-service' });
 
 // ─── Get Cart ───────────────────────────────────────────
 export const getCart = async (req: Request, res: Response): Promise<void> => {
@@ -14,8 +20,12 @@ export const getCart = async (req: Request, res: Response): Promise<void> => {
 export const addItem = async (req: Request, res: Response): Promise<void> => {
   const { productId, quantity } = req.body;
 
-  // Fetch the real product from product-service (not trusting client data)
-  const productRes = await fetch(`${config.productServiceUrl}/api/products/${productId}`);
+  // Fetch the real product from product-service (not trusting client data).
+  // Wrapped in circuit breaker: if product-service has failed 5 times in a row,
+  // this throws immediately instead of waiting for a timeout.
+  const productRes = await productBreaker.fire(() =>
+    fetch(`${config.productServiceUrl}/api/products/${productId}`)
+  );
   if (!productRes.ok) {
     throw new NotFoundError('Product');
   }

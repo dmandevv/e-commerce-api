@@ -10,6 +10,7 @@ dotenv.config({ path: resolve(__dirname, '../../.env'), override: true });
 interface Config {
   port: number;
   rabbitmqUrl: string;
+  jwtSecret: string;
   smtp: {
     host: string;
     port: number;
@@ -23,6 +24,7 @@ interface Config {
 export const config: Config = {
   port: parseInt(process.env.PORT || '3006', 10),
   rabbitmqUrl: process.env.RABBITMQ_URL || 'amqp://admin:admin_password@localhost:5672',
+  jwtSecret: process.env.JWT_SECRET || '',
   userServiceUrl: process.env.USER_SERVICE_URL || 'http://user-service:3001',
   smtp: {
     host: process.env.SMTP_HOST || '',
