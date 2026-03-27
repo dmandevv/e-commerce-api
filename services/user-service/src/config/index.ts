@@ -18,7 +18,7 @@ interface Config {
 
 export const config: Config = {
   port: parseInt(process.env.PORT || '3001', 10),
-  mongoUri: process.env.MONGO_URI || 'mongodb://admin:admin_password@localhost:27017/user-service?authSource=admin',
+  mongoUri: process.env.MONGODB_URI || 'mongodb://admin:admin_password@localhost:27017/user-service?authSource=admin',
   jwtSecret: process.env.JWT_SECRET || '',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1d',
   rabbitmqUrl: process.env.RABBITMQ_URL || 'amqp://admin:admin_password@localhost:5672',

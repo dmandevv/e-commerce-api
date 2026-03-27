@@ -117,7 +117,7 @@ services:
     restart: unless-stopped
     environment:
       PORT: 3001
-      MONGO_URI: mongodb://admin:admin_password@mongodb:27017/user-service?authSource=admin
+      MONGODB_URI: mongodb://admin:admin_password@mongodb:27017/user-service?authSource=admin
       JWT_SECRET: ${JWT_SECRET:-dev_secret_change_in_production}
       RABBITMQ_URL: amqp://admin:admin_password@rabbitmq:5672
     depends_on:
@@ -144,7 +144,7 @@ services:
     restart: unless-stopped
     environment:
       PORT: 3002
-      MONGO_URI: mongodb://admin:admin_password@mongodb:27017/product-service?authSource=admin
+      MONGODB_URI: mongodb://admin:admin_password@mongodb:27017/product-service?authSource=admin
       JWT_SECRET: ${JWT_SECRET:-dev_secret_change_in_production}
       RABBITMQ_URL: amqp://admin:admin_password@rabbitmq:5672
       REDIS_URL: redis://redis:6379
@@ -289,7 +289,7 @@ services:
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
-      FROM_EMAIL: ${FROM_EMAIL:-noreply@ecommerce.com}
+      SMTP_FROM: ${SMTP_FROM:-noreply@ecommerce.com}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -312,7 +312,7 @@ services:
     container_name: ecommerce-seed
     profiles: [tools]
     environment:
-      MONGO_URI: mongodb://admin:admin_password@mongodb:27017
+      MONGODB_URI: mongodb://admin:admin_password@mongodb:27017
     depends_on:
       mongodb:
         condition: service_healthy

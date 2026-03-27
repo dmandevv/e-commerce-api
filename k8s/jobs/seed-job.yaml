@@ -1,0 +1,41 @@
+# ─────────────────────────────────────────────────────────
+# Seed Job — replaces `docker compose --profile tools run --rm seed`
+#
+# Run:   kubectl apply -f k8s/jobs/seed-job.yaml
+# Re-run: kubectl delete job seed-database -n ecommerce && kubectl apply -f k8s/jobs/seed-job.yaml
+# Logs:  kubectl logs job/seed-database -n ecommerce
+# ─────────────────────────────────────────────────────────
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: seed-database
+  namespace: ecommerce
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 2
+  template:
+    spec:
+      imagePullSecrets:
+        - name: ghcr-regcred
+      containers:
+        - name: seed
+          image: ghcr.io/dmandevv/e-commerce-api/seed:latest
+          env:
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: ecommerce-secrets
+                  key: MONGODB_URI
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ecommerce-secrets
+                  key: ADMIN_PASSWORD
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+      restartPolicy: Never

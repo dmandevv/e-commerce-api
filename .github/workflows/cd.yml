@@ -34,7 +34,6 @@ jobs:
           - payment-service
           - notification-service
           - health-service
-          - gateway
           - seed
 
     steps:
@@ -61,7 +60,7 @@ jobs:
       # ─── Extract metadata for tags ──────────────────────
       # WHY: We tag images with both:
       #   - The git SHA (immutable, for rollbacks: "deploy sha abc123")
-      #   - "latest" (convenience, for docker compose pull)
+      #   - "latest" (convenience, for kubectl set image)
       # This way you always know exactly which commit is running.
       - name: Extract metadata
         id: meta
@@ -77,8 +76,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          # gateway → gateway/Dockerfile, seed → scripts/Dockerfile, others → services/<name>/Dockerfile
-          file: ${{ matrix.service == 'gateway' && 'gateway/Dockerfile' || matrix.service == 'seed' && 'scripts/Dockerfile' || format('services/{0}/Dockerfile', matrix.service) }}
+          # seed → scripts/Dockerfile, others → services/<name>/Dockerfile
+          file: ${{ matrix.service == 'seed' && 'scripts/Dockerfile' || format('services/{0}/Dockerfile', matrix.service) }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -87,45 +86,21 @@ jobs:
           cache-from: type=registry,ref=ghcr.io/${{ github.repository }}/${{ matrix.service }}:buildcache
           cache-to: type=registry,ref=ghcr.io/${{ github.repository }}/${{ matrix.service }}:buildcache,mode=max
 
-  # ─── Deploy to DigitalOcean ──────────────────────────────
-  # WHY a separate job? This runs AFTER all 6 images are built
+  # ─── Deploy to Kubernetes (k3s) ────────────────────────
+  # WHY a separate job? This runs AFTER all images are built
   # and pushed. "needs: build-and-push" ensures we don't deploy
   # until every image is ready.
   #
-  # HOW: SSH into the Droplet, pull the latest images, and
-  # restart containers. Zero-downtime isn't the goal here —
-  # the restart takes ~30 seconds. For a portfolio project
-  # that's fine. Real stores use rolling deploys (Kubernetes).
+  # HOW: SSH into the Droplet, update each Deployment's image
+  # tag to the exact commit SHA, then wait for rollouts to
+  # complete. Kubernetes handles zero-downtime rolling updates
+  # via the RollingUpdate strategy (maxUnavailable: 0).
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
     needs: build-and-push
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # ─── Sync deployment files to server ───────────────────
-      # WHY: The server needs docker-compose.prod.yml to run
-      # docker compose commands. We copy it from the repo so
-      # the server always has the version that matches the code.
-      # The .env file is NOT copied — it lives only on the
-      # server and contains production secrets.
-      # NOTE: nginx.prod.conf is no longer copied here — it's
-      # baked into the gateway Docker image (see gateway/Dockerfile).
-      - name: Copy files to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: "docker-compose.prod.yml"
-          target: ~/ecommerce
-
-      # ─── SSH and Deploy ──────────────────────────────────
-      # WHY appleboy/ssh-action? It handles SSH key setup,
-      # known_hosts, and connection management. Saves ~15 lines
-      # of manual SSH config.
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
         with:
@@ -133,13 +108,17 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
-            cd ~/ecommerce
+            SHORT_SHA=$(echo "${{ github.sha }}" | head -c 7)
+            REPO="ghcr.io/${{ github.repository }}"
 
-            # Pull the latest images from GHCR
-            docker compose -f docker-compose.prod.yml pull
+            # Update each deployment's image to the exact commit SHA
+            for SVC in user-service product-service cart-service order-service payment-service notification-service health-service; do
+              kubectl set image deployment/$SVC \
+                $SVC=${REPO}/${SVC}:${SHORT_SHA} \
+                -n ecommerce
+            done
 
-            # Restart with new images, remove orphaned containers
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
-
-            # Clean up old images to save disk space
-            docker image prune -f
+            # Wait for all rollouts to complete (timeout 2 min each)
+            for SVC in user-service product-service cart-service order-service payment-service notification-service health-service; do
+              kubectl rollout status deployment/$SVC -n ecommerce --timeout=120s
+            done

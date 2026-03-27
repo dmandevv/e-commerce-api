@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: health-service
+  namespace: ecommerce
+  labels:
+    app: health-service
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: health-service
+  template:
+    metadata:
+      labels:
+        app: health-service
+    spec:
+      imagePullSecrets:
+        - name: ghcr-regcred
+      containers:
+        - name: health-service
+          image: ghcr.io/dmandevv/e-commerce-api/health-service:latest
+          ports:
+            - containerPort: 3007
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: ecommerce-config
+                  key: HEALTH_SERVICE_PORT
+          resources:
+            requests:
+              cpu: 20m
+              memory: 40Mi
+            limits:
+              cpu: 100m
+              memory: 80Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3007
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3007
+            initialDelaySeconds: 35
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: health-service
+  namespace: ecommerce
+spec:
+  type: ClusterIP
+  selector:
+    app: health-service
+  ports:
+    - port: 3007
+      targetPort: 3007
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: health-service
+  namespace: ecommerce
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: health-service
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

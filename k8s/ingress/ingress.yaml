@@ -1,0 +1,164 @@
+# ─────────────────────────────────────────────────────────
+# Traefik IngressRoute — replaces gateway/nginx.prod.conf
+#
+# Uses Traefik's CRD for path-based routing with per-route
+# middleware chains (CORS + rate limiting).
+#
+# TLS is handled by Traefik's built-in ACME resolver.
+# Configure on the server:
+#   k3s server --write-kubeconfig-mode=644 ...
+#   Then edit /var/lib/rancher/k3s/server/manifests/traefik-config.yaml
+# ─────────────────────────────────────────────────────────
+
+# HTTP → HTTPS redirect
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: ecommerce
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ecommerce-http
+  namespace: ecommerce
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`dmandevv.shop`) || Host(`www.dmandevv.shop`)
+      kind: Rule
+      middlewares:
+        - name: redirect-https
+      services:
+        - name: user-service
+          port: 3001
+---
+# Main HTTPS IngressRoute
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ecommerce-https
+  namespace: ecommerce
+spec:
+  entryPoints:
+    - websecure
+  tls:
+    certResolver: le
+  routes:
+    # ── Auth endpoints (strict rate limit: 5/min) ──────
+    - match: Host(`dmandevv.shop`) && (PathPrefix(`/api/users/login`) || PathPrefix(`/api/users/register`))
+      kind: Rule
+      priority: 20
+      middlewares:
+        - name: cors-headers
+        - name: rate-limit-auth
+      services:
+        - name: user-service
+          port: 3001
+
+    # ── Block internal & metrics endpoints ─────────────
+    # Higher priority so they match before the general API routes
+    - match: Host(`dmandevv.shop`) && PathPrefix(`/metrics`)
+      kind: Rule
+      priority: 15
+      middlewares:
+        - name: block-internal
+      services:
+        - name: user-service
+          port: 3001
+
+    # ── Gateway health check ───────────────────────────
+    - match: Host(`dmandevv.shop`) && Path(`/health`)
+      kind: Rule
+      priority: 15
+      middlewares:
+        - name: cors-headers
+      services:
+        - name: health-service
+          port: 3007
+
+    # ── WebSocket (Socket.IO) ──────────────────────────
+    - match: Host(`dmandevv.shop`) && PathPrefix(`/socket.io/`)
+      kind: Rule
+      priority: 15
+      middlewares:
+        - name: cors-headers
+      services:
+        - name: notification-service
+          port: 3006
+
+    # ── API routes (general rate limit: 30/s) ──────────
+    - match: Host(`dmandevv.shop`) && PathPrefix(`/api/health`)
+      kind: Rule
+      priority: 10
+      middlewares:
+        - name: cors-headers
+        - name: rate-limit-api
+      services:
+        - name: health-service
+          port: 3007
+
+    - match: Host(`dmandevv.shop`) && PathPrefix(`/api/users`)
+      kind: Rule
+      priority: 10
+      middlewares:
+        - name: cors-headers
+        - name: rate-limit-api
+      services:
+        - name: user-service
+          port: 3001
+
+    - match: Host(`dmandevv.shop`) && PathPrefix(`/api/products`)
+      kind: Rule
+      priority: 10
+      middlewares:
+        - name: cors-headers
+        - name: rate-limit-api
+      services:
+        - name: product-service
+          port: 3002
+
+    - match: Host(`dmandevv.shop`) && PathPrefix(`/api/cart`)
+      kind: Rule
+      priority: 10
+      middlewares:
+        - name: cors-headers
+        - name: rate-limit-api
+      services:
+        - name: cart-service
+          port: 3003
+
+    - match: Host(`dmandevv.shop`) && PathPrefix(`/api/orders`)
+      kind: Rule
+      priority: 10
+      middlewares:
+        - name: cors-headers
+        - name: rate-limit-api
+      services:
+        - name: order-service
+          port: 3004
+
+    - match: Host(`dmandevv.shop`) && PathPrefix(`/api/payments`)
+      kind: Rule
+      priority: 10
+      middlewares:
+        - name: cors-headers
+        - name: rate-limit-api
+      services:
+        - name: payment-service
+          port: 3005
+---
+# Block middleware — returns 404 for internal/metrics endpoints
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: block-internal
+  namespace: ecommerce
+spec:
+  replacePath:
+    path: /404

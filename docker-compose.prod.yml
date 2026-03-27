@@ -2,10 +2,10 @@
 # Production Docker Compose
 #
 # All stateful services run on managed external providers:
-#   MongoDB    → Atlas     (MONGO_URI_*)
+#   MongoDB    → Atlas     (MONGODB_URI_*)
 #   PostgreSQL → Neon      (ORDER_DATABASE_URL, PAYMENT_DATABASE_URL)
-#   Redis      → Upstash   (UPSTASH_REDIS_URL)
-#   RabbitMQ   → CloudAMQP (CLOUDAMQP_URL)
+#   Redis      → Upstash   (REDIS_URL)
+#   RabbitMQ   → CloudAMQP (RABBITMQ_URL)
 #
 # Only stateless application services run here.
 # ─────────────────────────────────────────────────────────
@@ -47,9 +47,9 @@ services:
     restart: unless-stopped
     environment:
       PORT: 3001
-      MONGO_URI: ${MONGO_URI_USER}
+      MONGODB_URI: ${MONGODB_URI_USER}
       JWT_SECRET: ${JWT_SECRET}
-      RABBITMQ_URL: ${CLOUDAMQP_URL}
+      RABBITMQ_URL: ${RABBITMQ_URL}
     healthcheck:
       test: wget -qO- http://127.0.0.1:3001/health || exit 1
       interval: 10s
@@ -65,10 +65,10 @@ services:
     restart: unless-stopped
     environment:
       PORT: 3002
-      MONGO_URI: ${MONGO_URI_PRODUCT}
+      MONGODB_URI: ${MONGODB_URI_PRODUCT}
       JWT_SECRET: ${JWT_SECRET}
-      RABBITMQ_URL: ${CLOUDAMQP_URL}
-      REDIS_URL: ${UPSTASH_REDIS_URL}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      REDIS_URL: ${REDIS_URL}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
@@ -87,9 +87,9 @@ services:
     restart: unless-stopped
     environment:
       PORT: 3003
-      REDIS_URL: ${UPSTASH_REDIS_URL}
+      REDIS_URL: ${REDIS_URL}
       JWT_SECRET: ${JWT_SECRET}
-      RABBITMQ_URL: ${CLOUDAMQP_URL}
+      RABBITMQ_URL: ${RABBITMQ_URL}
       CART_TTL: 259200
     healthcheck:
       test: wget -qO- http://127.0.0.1:3003/health || exit 1
@@ -108,7 +108,7 @@ services:
       PORT: 3004
       DATABASE_URL: ${ORDER_DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
-      RABBITMQ_URL: ${CLOUDAMQP_URL}
+      RABBITMQ_URL: ${RABBITMQ_URL}
       PRODUCT_SERVICE_URL: http://product-service:3002
       CART_SERVICE_URL: http://cart-service:3003
     healthcheck:
@@ -128,7 +128,7 @@ services:
       PORT: 3005
       DATABASE_URL: ${PAYMENT_DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
-      RABBITMQ_URL: ${CLOUDAMQP_URL}
+      RABBITMQ_URL: ${RABBITMQ_URL}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
     healthcheck:
@@ -146,13 +146,13 @@ services:
     restart: unless-stopped
     environment:
       PORT: 3006
-      RABBITMQ_URL: ${CLOUDAMQP_URL}
+      RABBITMQ_URL: ${RABBITMQ_URL}
       JWT_SECRET: ${JWT_SECRET}
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
-      FROM_EMAIL: ${FROM_EMAIL}
+      SMTP_FROM: ${SMTP_FROM}
     healthcheck:
       test: wget -qO- http://127.0.0.1:3006/health || exit 1
       interval: 10s
@@ -196,7 +196,7 @@ services:
     container_name: ecommerce-seed
     profiles: [tools]
     environment:
-      MONGO_URI: ${MONGO_URI}
+      MONGODB_URI: ${MONGODB_URI}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@Ecom2026!}
     networks:
       - ecommerce-network

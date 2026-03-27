@@ -22,7 +22,7 @@ interface Config {
 
 export const config: Config = {
     port: parseInt(process.env.PORT || '3002', 10),
-    mongoUri: process.env.MONGO_URI || 'mongodb://admin:admin_password@localhost:27017/product-service?authSource=admin',
+    mongoUri: process.env.MONGODB_URI || 'mongodb://admin:admin_password@localhost:27017/product-service?authSource=admin',
     jwtSecret: process.env.JWT_SECRET || '',
     rabbitmqUrl: process.env.RABBITMQ_URL || 'amqp://admin:admin_password@localhost:5672',
     redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
