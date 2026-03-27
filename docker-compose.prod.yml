@@ -196,7 +196,7 @@ services:
     container_name: ecommerce-seed
     profiles: [tools]
     environment:
-      MONGO_URI: ${MONGO_URI_SEED}
+      MONGO_URI: ${MONGO_URI}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@Ecom2026!}
     networks:
       - ecommerce-network
