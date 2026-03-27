@@ -12,7 +12,7 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 // ─── Config ──────────────────────────────────────────────
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://admin:admin_password@localhost:27017';
+const MONGO_URI = process.env.MONGO_URI || '';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'dev@dmandevv.shop';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@Ecom2026!';
 const ADMIN_NAME = process.env.ADMIN_NAME || 'Admin';
@@ -176,7 +176,7 @@ async function seed() {
   console.log('🌱 Starting database seed...\n');
 
   // --- Admin User ---
-  const userConn = await mongoose.createConnection(`${MONGO_URI}/user-service?authSource=admin`).asPromise();
+  const userConn = await mongoose.createConnection(`${MONGO_URI}/user-service`).asPromise();
   const UserSchema = new mongoose.Schema({
     name: String,
     email: { type: String, unique: true },
@@ -197,7 +197,7 @@ async function seed() {
   console.log(`✓ Admin user upserted (${ADMIN_EMAIL} / ${ADMIN_PASSWORD})`);
 
   // --- Products ---
-  const productConn = await mongoose.createConnection(`${MONGO_URI}/product-service?authSource=admin`).asPromise();
+  const productConn = await mongoose.createConnection(`${MONGO_URI}/product-service`).asPromise();
   const ProductSchema = new mongoose.Schema({
     name: String,
     description: String,
