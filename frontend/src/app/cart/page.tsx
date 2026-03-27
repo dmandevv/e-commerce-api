@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
-import { useCartContext } from "@/context/CartContext";
+import { useCartContext, type ICartItem } from "@/context/CartContext";
 import { apiFetch } from "@/lib/api";
 
 export default function CartPage() {
@@ -28,7 +28,7 @@ export default function CartPage() {
     if (!cart || cart.items.length === 0) return;
 
     Promise.all(
-      cart.items.map((item) =>
+      cart.items.map((item: ICartItem) =>
         apiFetch<{ success: boolean; data: { stock: number } }>(
           `/api/products/${item.productId}`
         )
