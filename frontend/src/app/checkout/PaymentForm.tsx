@@ -9,7 +9,7 @@ interface PaymentFormProps {
   total: number;
 }
 
-export default function PaymentForm({ orderId, total }: PaymentFormProps) {
+export default function PaymentForm({ total }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);

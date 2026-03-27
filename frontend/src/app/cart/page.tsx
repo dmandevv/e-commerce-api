@@ -61,7 +61,7 @@ export default function CartPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-gray-600">
-                You haven't added any items to your cart yet. Start shopping to find products you love!
+                You have not added any items to your cart yet. Start shopping to find products you love!
               </p>
               <Link href="/products">
                 <Button className="bg-[#ffd814] hover:bg-[#f7ca00] text-[#0f1111] font-medium rounded-lg border border-[#fcd200]">

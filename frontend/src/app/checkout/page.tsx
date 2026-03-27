@@ -27,13 +27,6 @@ interface IOrder {
   createdAt: string;
 }
 
-interface IPayment {
-  id: string;
-  orderId: string;
-  stripeClientSecret?: string;
-  status: string;
-}
-
 async function pollForClientSecret(
   orderId: string,
   token: string

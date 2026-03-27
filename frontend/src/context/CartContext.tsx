@@ -10,7 +10,7 @@ import {
 } from "react";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "./AuthContext";
-import type { ICart, ICartItem } from "@ecommerce/shared/types";
+import type { ICart } from "@ecommerce/shared/types";
 
 // ─── Context Type ───────────────────────────────────────────
 
