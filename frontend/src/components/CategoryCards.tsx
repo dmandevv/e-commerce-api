@@ -12,7 +12,7 @@ const categories = [
 
 export default function CategoryCards() {
   return (
-    <section className="container mx-auto px-4 -mt-8 relative z-10">
+    <section className="w-full px-4 -mt-8 relative z-10">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {categories.map((cat) => (
           <Link key={cat.name} href={`/products?category=${cat.name.toLowerCase()}`}>

@@ -33,7 +33,7 @@ export default function Footer() {
 
       {/* Link columns */}
       <div className="bg-[#232f3e] text-white">
-        <div className="container mx-auto px-4 py-10">
+        <div className="w-full px-4 py-10">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
             {Object.entries(footerLinks).map(([title, links]) => (
               <div key={title}>

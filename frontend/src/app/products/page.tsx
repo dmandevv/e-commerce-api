@@ -6,14 +6,10 @@ export const metadata = {
   description: "Browse our full catalog of products",
 };
 
-export default function ProductsPage({
-  searchParams,
-}: {
-  searchParams: { category?: string; sort?: string; page?: string; search?: string };
-}) {
+export default function ProductsPage() {
   return (
     <div className="bg-[#eaeded] min-h-screen">
-      <div className="container mx-auto px-4 py-6">
+      <div className="w-full px-4 py-6">
         <Suspense
           fallback={
             <div className="text-center py-12 text-muted-foreground">
@@ -21,7 +17,7 @@ export default function ProductsPage({
             </div>
           }
         >
-          <ProductGrid searchParams={searchParams} />
+          <ProductGrid />
         </Suspense>
       </div>
     </div>

@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 export default function HeroBanner() {
   return (
     <section className="relative bg-gradient-to-b from-[#232f3e] to-[#eaeded] overflow-hidden">
-      <div className="container mx-auto px-4 py-12 md:py-20">
-        <div className="max-w-2xl">
+      <div className="w-full px-4 py-12 md:py-20 flex items-center justify-center">
+        <div className="max-w-2xl text-center">
           <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight">
             Shop the latest fake products
           </h1>

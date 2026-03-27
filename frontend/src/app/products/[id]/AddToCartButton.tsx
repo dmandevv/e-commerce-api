@@ -3,50 +3,40 @@
 import { useState } from "react";
 import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
+import { useCartContext } from "@/context/CartContext";
 
 export default function AddToCartButton({
   productId,
   inStock,
+  stock,
 }: {
   productId: string;
   inStock: boolean;
+  stock: number;
 }) {
+  const { token } = useAuth();
+  const { addItem } = useCartContext();
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
   const [message, setMessage] = useState("");
 
   async function handleAddToCart() {
+    if (!token) {
+      setMessage("Please sign in to add items to your cart");
+      return;
+    }
+
     setAdding(true);
     setMessage("");
 
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
-      if (!token) {
-        setMessage("Please sign in to add items to your cart");
-        return;
-      }
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "https://dmandevv.shop"}/api/cart/items`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ productId, quantity }),
-        }
-      );
-
-      if (res.ok) {
-        setMessage("Added to cart!");
-      } else {
-        const data = await res.json().catch(() => null);
-        setMessage(data?.message || data?.errors?.[0]?.message || "Failed to add to cart");
-      }
-    } catch {
-      setMessage("Failed to add to cart");
+      await addItem(productId, quantity);
+      setMessage("Added to cart!");
+      setQuantity(1); // Reset quantity after adding
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Failed to add to cart";
+      setMessage(errorMsg);
     } finally {
       setAdding(false);
     }
@@ -70,7 +60,7 @@ export default function AddToCartButton({
           onChange={(e) => setQuantity(Number(e.target.value))}
           className="border border-[#d5d9d9] rounded-lg px-3 py-1.5 bg-[#f0f2f2] text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#007185]"
         >
-          {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+          {Array.from({ length: Math.min(stock, 99) }, (_, i) => i + 1).map((n) => (
             <option key={n} value={n}>
               {n}
             </option>

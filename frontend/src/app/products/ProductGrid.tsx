@@ -1,3 +1,7 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import ProductCard, { type Product } from "@/components/ProductCard";
 import { apiFetch } from "@/lib/api";
 import Link from "next/link";
@@ -17,43 +21,40 @@ interface ProductsResponse {
   };
 }
 
-async function getProducts(params: {
-  category?: string;
-  sort?: string;
-  page?: string;
-  search?: string;
-}): Promise<ProductsResponse> {
-  const query = new URLSearchParams();
-  if (params.category) query.set("category", params.category);
-  if (params.sort) query.set("sort", params.sort);
-  if (params.page) query.set("page", params.page);
-  if (params.search) query.set("keyword", params.search);
-  query.set("limit", "12");
+export default function ProductGrid() {
+  const searchParams = useSearchParams();
+  const category = searchParams.get("category") ?? undefined;
+  const sort = searchParams.get("sort") ?? undefined;
+  const page = searchParams.get("page") ?? undefined;
+  const search = searchParams.get("search") ?? undefined;
 
-  try {
-    return await apiFetch<ProductsResponse>(
-      `/api/products?${query.toString()}`,
-      { next: { revalidate: 30 } }
-    );
-  } catch {
-    return { success: false, data: [], count: 0 };
-  }
-}
+  const [res, setRes] = useState<ProductsResponse>({ success: false, data: [], count: 0 });
+  const [loading, setLoading] = useState(true);
 
-export default async function ProductGrid({
-  searchParams,
-}: {
-  searchParams: { category?: string; sort?: string; page?: string; search?: string };
-}) {
-  const res = await getProducts(searchParams);
+  useEffect(() => {
+    setLoading(true);
+    const query = new URLSearchParams();
+    if (category) query.set("category", category);
+    if (sort) query.set("sort", sort);
+    if (page) query.set("page", page);
+    if (search) query.set("keyword", search);
+    query.set("limit", "12");
+
+    apiFetch<ProductsResponse>(`/api/products?${query.toString()}`)
+      .then(setRes)
+      .catch(() => setRes({ success: false, data: [], count: 0 }))
+      .finally(() => setLoading(false));
+  }, [category, sort, page, search]);
+
   const products = res.data;
-  const currentPage = Number(searchParams.page) || 1;
+  const currentPage = Number(page) || 1;
   const totalPages = (res.pagination?.totalPages ?? Math.ceil(res.count / 12)) || 1;
-  const activeCategory = searchParams.category?.toLowerCase();
+  const activeCategory = category?.toLowerCase();
 
   function buildUrl(overrides: Record<string, string | undefined>) {
     const params = new URLSearchParams();
-    const merged = { ...searchParams, ...overrides };
+    const current = { category, sort, page, search };
+    const merged = { ...current, ...overrides };
     for (const [k, v] of Object.entries(merged)) {
       if (v) params.set(k, v);
     }
@@ -118,7 +119,7 @@ export default async function ProductGrid({
                 key={opt.value}
                 href={buildUrl({ sort: opt.value, page: undefined })}
                 className={`px-2 py-1 rounded text-xs border transition-colors ${
-                  searchParams.sort === opt.value
+                  sort === opt.value
                     ? "bg-[#131921] text-white border-[#131921]"
                     : "border-[#d5d9d9] hover:bg-[#f7fafa]"
                 }`}
@@ -133,14 +134,22 @@ export default async function ProductGrid({
       {/* Results info */}
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-muted-foreground">
-          {res.count > 0
+          {loading
+            ? "Loading..."
+            : res.count > 0
             ? `Showing ${products.length} of ${res.pagination?.totalCount ?? res.count} results`
             : "No products found"}
         </p>
       </div>
 
       {/* Product grid */}
-      {products.length > 0 ? (
+      {loading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-lg h-64 animate-pulse" />
+          ))}
+        </div>
+      ) : products.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {products.map((product) => (
             <ProductCard key={product._id} product={product} />
@@ -156,7 +165,7 @@ export default async function ProductGrid({
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {!loading && totalPages > 1 && (
         <nav className="flex justify-center items-center gap-2 mt-8">
           {currentPage > 1 && (
             <Link

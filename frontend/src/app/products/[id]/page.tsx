@@ -1,4 +1,7 @@
-import { notFound } from "next/navigation";
+"use client";
+
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import type { Product } from "@/components/ProductCard";
@@ -11,25 +14,6 @@ interface ProductResponse {
   data: Product;
 }
 
-async function getProduct(id: string): Promise<Product | null> {
-  try {
-    const res = await apiFetch<ProductResponse>(`/api/products/${id}`, {
-      next: { revalidate: 30 },
-    });
-    return res.data;
-  } catch {
-    return null;
-  }
-}
-
-export async function generateMetadata({ params }: { params: { id: string } }) {
-  const product = await getProduct(params.id);
-  return {
-    title: product ? `${product.name} - dmandevv.shop` : "Product Not Found",
-    description: product?.description,
-  };
-}
-
 const categoryEmoji: Record<string, string> = {
   Electronics: "📱",
   Cameras: "📷",
@@ -38,14 +22,57 @@ const categoryEmoji: Record<string, string> = {
   Food: "🍫",
 };
 
-export default async function ProductPage({ params }: { params: { id: string } }) {
-  const product = await getProduct(params.id);
+export default function ProductPage() {
+  const { id } = useParams<{ id: string }>();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
-  if (!product) return notFound();
+  useEffect(() => {
+    if (!id) return;
+    apiFetch<ProductResponse>(`/api/products/${id}`)
+      .then((res) => setProduct(res.data))
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="bg-[#eaeded] min-h-screen">
+        <div className="w-full px-4 py-6">
+          <div className="bg-white rounded-lg p-6 md:p-8 animate-pulse">
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="bg-[#f7f7f7] rounded-lg aspect-square" />
+              <div className="space-y-4">
+                <div className="h-8 bg-[#f7f7f7] rounded w-3/4" />
+                <div className="h-4 bg-[#f7f7f7] rounded w-1/4" />
+                <div className="h-10 bg-[#f7f7f7] rounded w-1/3" />
+                <div className="h-20 bg-[#f7f7f7] rounded" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (notFound || !product) {
+    return (
+      <div className="bg-[#eaeded] min-h-screen flex items-center justify-center">
+        <div className="bg-white rounded-lg p-12 text-center">
+          <h1 className="text-2xl font-medium text-[#0f1111] mb-2">Product not found</h1>
+          <p className="text-muted-foreground mb-6">This product may no longer be available.</p>
+          <Link href="/products" className="text-[#007185] hover:underline">
+            Back to products
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#eaeded] min-h-screen">
-      <div className="container mx-auto px-4 py-6">
+      <div className="w-full px-4 py-6">
         {/* Breadcrumb */}
         <nav className="text-sm text-muted-foreground mb-4">
           <Link href="/" className="hover:text-[#007185]">
@@ -156,7 +183,11 @@ export default async function ProductPage({ params }: { params: { id: string } }
               </div>
 
               {/* Add to cart */}
-              <AddToCartButton productId={product._id} inStock={product.stock > 0} />
+              <AddToCartButton
+                productId={product._id}
+                inStock={product.stock > 0}
+                stock={product.stock}
+              />
             </div>
           </div>
         </div>

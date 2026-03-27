@@ -17,6 +17,22 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'dev@dmandevv.shop';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@Ecom2026!';
 const ADMIN_NAME = process.env.ADMIN_NAME || 'Admin';
 
+// ─── Safety Guard ────────────────────────────────────────
+const isProduction = MONGO_URI.includes('mongodb+srv');
+const isFreshSeed = process.argv.includes('--fresh');
+
+if (isProduction && isFreshSeed) {
+  console.error('❌ SAFETY: Refusing to run --fresh seed on production database!');
+  console.error('   To re-seed production, set: CONFIRM_PRODUCTION_SEED=true');
+  console.error('   Then run: CONFIRM_PRODUCTION_SEED=true npx tsx scripts/seed.ts --fresh');
+
+  if (!process.env.CONFIRM_PRODUCTION_SEED) {
+    process.exit(1);
+  }
+
+  console.warn('⚠️  WARNING: Proceeding with --fresh seed on PRODUCTION database!');
+}
+
 // ─── Products ────────────────────────────────────────────
 const products = [
   {
