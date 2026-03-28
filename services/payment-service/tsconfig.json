@@ -7,5 +7,6 @@
   "references": [
     { "path": "../../shared" }
   ],
-  "include": ["src", "generated"]
+  "include": ["src", "generated"],
+  "exclude": ["prisma.config.ts"]
 }
