@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://dmandevv.shop";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.dmandevv.shop";
 
 export async function apiFetch<T>(
   path: string,

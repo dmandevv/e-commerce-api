@@ -30,7 +30,7 @@ spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`dmandevv.shop`) || Host(`www.dmandevv.shop`)
+    - match: Host(`api.dmandevv.shop`)
       kind: Rule
       middlewares:
         - name: redirect-https
@@ -51,7 +51,7 @@ spec:
     certResolver: le
   routes:
     # ── Auth endpoints (strict rate limit: 5/min) ──────
-    - match: Host(`dmandevv.shop`) && (PathPrefix(`/api/users/login`) || PathPrefix(`/api/users/register`))
+    - match: Host(`api.dmandevv.shop`) && (PathPrefix(`/api/users/login`) || PathPrefix(`/api/users/register`))
       kind: Rule
       priority: 20
       middlewares:
@@ -63,7 +63,7 @@ spec:
 
     # ── Block internal & metrics endpoints ─────────────
     # Higher priority so they match before the general API routes
-    - match: Host(`dmandevv.shop`) && PathPrefix(`/metrics`)
+    - match: Host(`api.dmandevv.shop`) && PathPrefix(`/metrics`)
       kind: Rule
       priority: 15
       middlewares:
@@ -73,7 +73,7 @@ spec:
           port: 3001
 
     # ── Gateway health check ───────────────────────────
-    - match: Host(`dmandevv.shop`) && Path(`/health`)
+    - match: Host(`api.dmandevv.shop`) && Path(`/health`)
       kind: Rule
       priority: 15
       middlewares:
@@ -83,7 +83,7 @@ spec:
           port: 3007
 
     # ── WebSocket (Socket.IO) ──────────────────────────
-    - match: Host(`dmandevv.shop`) && PathPrefix(`/socket.io/`)
+    - match: Host(`api.dmandevv.shop`) && PathPrefix(`/socket.io/`)
       kind: Rule
       priority: 15
       middlewares:
@@ -93,7 +93,7 @@ spec:
           port: 3006
 
     # ── API routes (general rate limit: 30/s) ──────────
-    - match: Host(`dmandevv.shop`) && PathPrefix(`/api/health`)
+    - match: Host(`api.dmandevv.shop`) && PathPrefix(`/api/health`)
       kind: Rule
       priority: 10
       middlewares:
@@ -103,7 +103,7 @@ spec:
         - name: health-service
           port: 3007
 
-    - match: Host(`dmandevv.shop`) && PathPrefix(`/api/users`)
+    - match: Host(`api.dmandevv.shop`) && PathPrefix(`/api/users`)
       kind: Rule
       priority: 10
       middlewares:
@@ -113,7 +113,7 @@ spec:
         - name: user-service
           port: 3001
 
-    - match: Host(`dmandevv.shop`) && PathPrefix(`/api/products`)
+    - match: Host(`api.dmandevv.shop`) && PathPrefix(`/api/products`)
       kind: Rule
       priority: 10
       middlewares:
@@ -123,7 +123,7 @@ spec:
         - name: product-service
           port: 3002
 
-    - match: Host(`dmandevv.shop`) && PathPrefix(`/api/cart`)
+    - match: Host(`api.dmandevv.shop`) && PathPrefix(`/api/cart`)
       kind: Rule
       priority: 10
       middlewares:
@@ -133,7 +133,7 @@ spec:
         - name: cart-service
           port: 3003
 
-    - match: Host(`dmandevv.shop`) && PathPrefix(`/api/orders`)
+    - match: Host(`api.dmandevv.shop`) && PathPrefix(`/api/orders`)
       kind: Rule
       priority: 10
       middlewares:
@@ -143,7 +143,7 @@ spec:
         - name: order-service
           port: 3004
 
-    - match: Host(`dmandevv.shop`) && PathPrefix(`/api/payments`)
+    - match: Host(`api.dmandevv.shop`) && PathPrefix(`/api/payments`)
       kind: Rule
       priority: 10
       middlewares:

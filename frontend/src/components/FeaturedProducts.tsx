@@ -43,7 +43,7 @@ export default function FeaturedProducts() {
         <h2 className="text-2xl font-bold text-[#0f1111] mb-4">Featured Products</h2>
         <div className="bg-white rounded-lg p-8 text-center text-muted-foreground">
           <p>Unable to load products.</p>
-          <p className="text-sm mt-2">Make sure the backend is running at dmandevv.shop</p>
+          <p className="text-sm mt-2">Make sure the backend is running at api.dmandevv.shop</p>
         </div>
       </section>
     );

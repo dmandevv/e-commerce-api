@@ -14,7 +14,8 @@ metadata:
 spec:
   headers:
     accessControlAllowOriginList:
-      - "https://frontend-eta-ashen-44.vercel.app"
+      - "https://dmandevv.shop"
+      - "https://www.dmandevv.shop"
     accessControlAllowMethods:
       - GET
       - POST
