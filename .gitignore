@@ -1,6 +1,5 @@
 .env
 .env.local
-.env.sample
 
 node_modules/
 dist/
