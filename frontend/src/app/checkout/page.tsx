@@ -68,7 +68,7 @@ async function pollForClientSecret(
 
 export default function CheckoutPage() {
   const { token, loading: authLoading } = useAuth();
-  const { cart, refreshCart } = useCartContext();
+  const { cart } = useCartContext();
   const router = useRouter();
 
   const [stage, setStage] = useState<CheckoutStage>("summary");
