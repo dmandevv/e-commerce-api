@@ -31,8 +31,8 @@ async function pollForClientSecret(
   orderId: string,
   token: string
 ): Promise<string> {
-  const MAX_RETRIES = 10;
-  const DELAY_MS = 500;
+  const MAX_RETRIES = 20;
+  const DELAY_MS = 1000;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     if (attempt > 0) {
@@ -148,10 +148,7 @@ export default function CheckoutPage() {
       const order: IOrder = orderData.data;
       setOrderId(order.id);
 
-      // 2. Refresh cart (order service cleared it server-side)
-      await refreshCart();
-
-      // 3. Poll for client secret
+      // 2. Poll for client secret
       const secret = await pollForClientSecret(order.id, token);
       setClientSecret(secret);
 
