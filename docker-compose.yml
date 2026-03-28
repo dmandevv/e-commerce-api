@@ -7,7 +7,7 @@ services:
       - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin_password
+      MONGO_INITDB_ROOT_PASSWORD: admin
     volumes:
       - mongodb_data:/data/db
     # WHY healthcheck: ensures MongoDB is accepting connections,
@@ -29,7 +29,7 @@ services:
       - "5432:5432"
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin_password
+      POSTGRES_PASSWORD: admin
       POSTGRES_DB: ecommerce
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -66,7 +66,7 @@ services:
       - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: admin_password
+      RABBITMQ_DEFAULT_PASS: admin
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     # WHY start_period 30s: RabbitMQ takes the longest to initialize.
@@ -117,9 +117,9 @@ services:
     restart: unless-stopped
     environment:
       PORT: 3001
-      MONGODB_URI: mongodb://admin:admin_password@mongodb:27017/user-service?authSource=admin
+      MONGODB_URI: mongodb://admin:admin@mongodb:27017/user-service?authSource=admin
       JWT_SECRET: ${JWT_SECRET:-dev_secret_change_in_production}
-      RABBITMQ_URL: amqp://admin:admin_password@rabbitmq:5672
+      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
     depends_on:
       mongodb:
         condition: service_healthy
@@ -144,9 +144,9 @@ services:
     restart: unless-stopped
     environment:
       PORT: 3002
-      MONGODB_URI: mongodb://admin:admin_password@mongodb:27017/product-service?authSource=admin
+      MONGODB_URI: mongodb://admin:admin@mongodb:27017/product-service?authSource=admin
       JWT_SECRET: ${JWT_SECRET:-dev_secret_change_in_production}
-      RABBITMQ_URL: amqp://admin:admin_password@rabbitmq:5672
+      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
       REDIS_URL: redis://redis:6379
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
@@ -175,7 +175,7 @@ services:
       PORT: 3003
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-dev_secret_change_in_production}
-      RABBITMQ_URL: amqp://admin:admin_password@rabbitmq:5672
+      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
       CART_TTL: 259200
     depends_on:
       redis:
@@ -199,9 +199,9 @@ services:
     restart: unless-stopped
     environment:
       PORT: 3004
-      DATABASE_URL: postgresql://admin:admin_password@postgres:5432/ecommerce?schema=orders
+      DATABASE_URL: postgresql://admin:admin@postgres:5432/ecommerce?schema=orders
       JWT_SECRET: ${JWT_SECRET:-dev_secret_change_in_production}
-      RABBITMQ_URL: amqp://admin:admin_password@rabbitmq:5672
+      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
       PRODUCT_SERVICE_URL: http://product-service:3002
       CART_SERVICE_URL: http://cart-service:3003
     depends_on:
@@ -226,9 +226,9 @@ services:
     restart: unless-stopped
     environment:
       PORT: 3005
-      DATABASE_URL: postgresql://admin:admin_password@postgres:5432/ecommerce?schema=payments
+      DATABASE_URL: postgresql://admin:admin@postgres:5432/ecommerce?schema=payments
       JWT_SECRET: ${JWT_SECRET:-dev_secret_change_in_production}
-      RABBITMQ_URL: amqp://admin:admin_password@rabbitmq:5672
+      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
     depends_on:
@@ -283,7 +283,7 @@ services:
     restart: unless-stopped
     environment:
       PORT: 3006
-      RABBITMQ_URL: amqp://admin:admin_password@rabbitmq:5672
+      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
       JWT_SECRET: ${JWT_SECRET:-dev_secret_change_in_production}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
@@ -312,7 +312,7 @@ services:
     container_name: ecommerce-seed
     profiles: [tools]
     environment:
-      MONGODB_URI: mongodb://admin:admin_password@mongodb:27017
+      MONGODB_URI: mongodb://admin:admin@mongodb:27017
     depends_on:
       mongodb:
         condition: service_healthy

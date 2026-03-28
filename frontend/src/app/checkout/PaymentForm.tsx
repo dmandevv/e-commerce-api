@@ -44,6 +44,11 @@ export default function PaymentForm({ total }: PaymentFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
+        <p className="font-semibold mb-1">Test Mode — No real charges will be made</p>
+        <p>Use this dummy card: 4242 4242 4242 4242 | Exp: 12/28 | CVC: 123 | ZIP: 12345</p>
+      </div>
+
       <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
         <PaymentElement />
       </div>

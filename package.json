@@ -19,6 +19,9 @@
     "prisma:generate:payment": "cd services/payment-service && npx prisma generate",
     "prisma:generate": "npm run prisma:generate:order && npm run prisma:generate:payment",
     "postinstall": "if [ -d services/order-service ]; then npm run prisma:generate:order; fi && if [ -d services/payment-service ]; then npm run prisma:generate:payment; fi",
+    "dev-test": "bash scripts/dev-test.sh",
+    "dev-test:seed": "bash scripts/dev-test.sh --seed",
+    "dev-test:fresh": "bash scripts/dev-test.sh --fresh",
     "seed": "npx tsx scripts/seed.ts",
     "seed:fresh": "npx tsx scripts/seed.ts --fresh"
   },

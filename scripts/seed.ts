@@ -13,9 +13,22 @@ import bcrypt from 'bcryptjs';
 
 // ─── Config ──────────────────────────────────────────────
 const MONGODB_URI = process.env.MONGODB_URI || '';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'dev@dmandevv.shop';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@Ecom2026!';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@admin.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const ADMIN_NAME = process.env.ADMIN_NAME || 'Admin';
+
+/** Build a connection URI for a specific database.
+ *  Handles both Atlas (mongodb+srv) and local Docker (mongodb://) URIs.
+ *  For local Docker, adds authSource=admin so the root user can auth
+ *  against per-service databases. */
+function buildDbUri(base: string, dbName: string): string {
+  const url = new URL(base);
+  url.pathname = '/' + dbName;
+  if (!base.includes('mongodb+srv') && !url.searchParams.has('authSource')) {
+    url.searchParams.set('authSource', 'admin');
+  }
+  return url.toString();
+}
 
 // ─── Safety Guard ────────────────────────────────────────
 const isProduction = MONGODB_URI.includes('mongodb+srv');
@@ -176,7 +189,7 @@ async function seed() {
   console.log('🌱 Starting database seed...\n');
 
   // --- Admin User ---
-  const userConn = await mongoose.createConnection(`${MONGODB_URI}/user-service`).asPromise();
+  const userConn = await mongoose.createConnection(buildDbUri(MONGODB_URI, 'user-service')).asPromise();
   const UserSchema = new mongoose.Schema({
     name: String,
     email: { type: String, unique: true },
@@ -197,7 +210,7 @@ async function seed() {
   console.log(`✓ Admin user upserted (${ADMIN_EMAIL} / ${ADMIN_PASSWORD})`);
 
   // --- Products ---
-  const productConn = await mongoose.createConnection(`${MONGODB_URI}/product-service`).asPromise();
+  const productConn = await mongoose.createConnection(buildDbUri(MONGODB_URI, 'product-service')).asPromise();
   const ProductSchema = new mongoose.Schema({
     name: String,
     description: String,
