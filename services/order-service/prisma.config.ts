@@ -6,6 +6,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   schema: join(__dirname, 'prisma/schema.prisma'),
+  datasource: {
+    url: process.env.DATABASE_URL!,
+  },
   migrate: {
     async url() {
       return process.env.DATABASE_URL!;
