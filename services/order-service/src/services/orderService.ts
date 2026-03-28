@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/order-client';
+import { prisma } from '../lib/prisma.js';
 import { config } from '../config/index.js';
 import { publishEvent } from '../events/publisher.js';
 import { EventNames } from '@ecommerce/shared/events';
@@ -6,8 +6,6 @@ import { NotFoundError, ValidationError } from '@ecommerce/shared/errors';
 import { CircuitBreaker } from '@ecommerce/shared';
 import type { ICart } from '@ecommerce/shared/types';
 import type { OrderPlacedEvent } from '@ecommerce/shared/events';
-
-const prisma = new PrismaClient();
 
 // Separate breaker per downstream service.
 // cart-service being down shouldn't affect product-service calls and vice versa.

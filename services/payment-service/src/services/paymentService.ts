@@ -1,12 +1,10 @@
 import Stripe from 'stripe';
-import { PrismaClient } from '@prisma/payment-client';
+import { prisma } from '../lib/prisma.js';
 import { config } from '../config/index.js';
 import { publishEvent } from '../events/publisher.js';
 import { EventNames } from '@ecommerce/shared/events';
 import { NotFoundError } from '@ecommerce/shared/errors';
 import type { OrderPlacedEvent, PaymentCompletedEvent, PaymentFailedEvent } from '@ecommerce/shared/events';
-
-const prisma = new PrismaClient();
 const stripe = new Stripe(config.stripeSecretKey);
 
 // ─── Called by RabbitMQ consumer when order.placed arrives ─

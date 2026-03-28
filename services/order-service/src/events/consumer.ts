@@ -1,12 +1,10 @@
 import amqplib, { type Channel } from 'amqplib';
-import { PrismaClient } from '@prisma/order-client';
+import { prisma } from '../lib/prisma.js';
 import { config } from '../config/index.js';
 import type { PaymentCompletedEvent, PaymentFailedEvent } from '@ecommerce/shared/events';
 
 const EXCHANGE = 'ecommerce.events';
 const QUEUE = 'order-service.payments';
-
-const prisma = new PrismaClient();
 
 async function connectWithRetry(url: string, maxRetries = 10): Promise<amqplib.ChannelModel> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {

@@ -3,19 +3,21 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "main": "./dist/app.js",
+  "main": "./dist/src/app.js",
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/app.ts",
-    "start": "node dist/app.js",
+    "start": "node dist/src/app.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push"
   },
   "dependencies": {
     "@ecommerce/shared": "1.0.0",
-    "@prisma/client": "^6.9.0",
-    "prisma": "^6.9.0",
+    "@prisma/adapter-pg": "^7.0.0",
+    "@prisma/client": "^7.0.0",
+    "pg": "^8.16.0",
+    "prisma": "^7.0.0",
     "amqplib": "^0.10.5",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
@@ -24,6 +26,7 @@
   },
   "devDependencies": {
     "@types/amqplib": "^0.10.6",
+    "@types/pg": "^8.11.0",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/swagger-ui-express": "^4.1.8",
