@@ -15,7 +15,7 @@
     "resolveJsonModule": true,
     "composite": true
   },
-  "exclude": ["scripts", "frontend", "**/prisma.config.ts"],
+  "include": [],
   "references": [
     { "path": "./shared" },
     { "path": "./services/user-service" },
