@@ -23,11 +23,16 @@
     "dev-test:seed": "bash scripts/dev-test.sh --seed",
     "dev-test:fresh": "bash scripts/dev-test.sh --fresh",
     "seed": "npx tsx scripts/seed.ts",
-    "seed:fresh": "npx tsx scripts/seed.ts --fresh"
+    "seed:fresh": "npx tsx scripts/seed.ts --fresh",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@types/node": "^25.4.0",
-    "typescript": "^5.7.0"
+    "@vitest/coverage-v8": "^4.1.2",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.2"
   },
   "dependencies": {
     "dotenv": "^17.3.1",

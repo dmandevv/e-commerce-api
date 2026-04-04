@@ -1,5 +1,5 @@
 # ─── Stage 1: Build ──────────────────────────────────────
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -20,7 +20,7 @@ COPY services/payment-service/src ./services/payment-service/src
 RUN npx tsc --build shared services/payment-service
 
 # ─── Stage 2: Production ────────────────────────────────
-FROM node:20-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 

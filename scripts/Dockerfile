@@ -12,7 +12,7 @@
 # ─────────────────────────────────────────────────────────
 
 # ─── Stage 1: Compile ────────────────────────────────────
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 
 COPY scripts/seed.ts ./
@@ -29,7 +29,7 @@ RUN npm init -y \
        --skipLibCheck
 
 # ─── Stage 2: Production ─────────────────────────────────
-FROM node:18-alpine
+FROM node:22-alpine
 WORKDIR /app
 
 # Only the two runtime dependencies the seed needs

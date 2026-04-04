@@ -1,5 +1,5 @@
 # ─── Stage 1: Build ──────────────────────────────────────
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -18,8 +18,8 @@ COPY services/notification-service/src ./services/notification-service/src
 # Build shared first, then the service
 RUN npx tsc --build shared services/notification-service
 
-# ─── Stage 2: notificationion ────────────────────────────────
-FROM node:18-alpine
+# ─── Stage 2: Production ────────────────────────────────
+FROM node:22-alpine
 
 WORKDIR /app
 
