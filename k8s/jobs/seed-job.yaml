@@ -32,7 +32,7 @@ spec:
                 secretKeyRef:
                   name: ecommerce-secrets
                   key: ADMIN_PASSWORD
-          command: ["node", "seed.js", "--fresh"]
+          command: ["node", "seed.js"]
           resources:
             requests:
               cpu: 50m
