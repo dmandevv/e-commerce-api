@@ -245,10 +245,24 @@ async function seed() {
   const admin = await User.findOne({ email: ADMIN_EMAIL });
   const adminId = admin?._id?.toString() || 'seed-admin';
 
+  // Map product names to Cloudinary image URLs
+  const productImages: Record<string, string> = {
+    'Sony WH-1000XM5 Headphones': 'https://res.cloudinary.com/dmandevv-ecommerce/image/upload/v1775294969/headphones_q43kpt.jpg',
+    'Canon EOS R6 Mark II': 'https://res.cloudinary.com/dmandevv-ecommerce/image/upload/v1775295634/jon-tyson-ufBQap6j1lg-unsplash_mxromk.jpg',
+    'MacBook Pro 16" M3 Pro': 'https://res.cloudinary.com/dmandevv-ecommerce/image/upload/v1775295263/kari-shea-1SAnrIxw5OY-unsplash_1_tervet.jpg',
+    'Logitech MX Master 3S': 'https://res.cloudinary.com/dmandevv-ecommerce/image/upload/v1775296914/luka-petranovic-UihqZIiVcxY-unsplash_jfmvkr.jpg',
+    'Samsung Galaxy S24 Ultra': 'https://res.cloudinary.com/dmandevv-ecommerce/image/upload/v1775296833/dhruv-vishwakarma-Eda49vVHnp0-unsplash_btr19u.jpg',
+    'Sony A7 IV Camera': 'https://res.cloudinary.com/dmandevv-ecommerce/image/upload/v1775295868/mathias-reding-9uY9MpS4HNI-unsplash_bjk4si.jpg',
+    'Lenovo ThinkPad X1 Carbon Gen 11': 'https://res.cloudinary.com/dmandevv-ecommerce/image/upload/v1775295733/gavin-phillips-KFkikBO02pY-unsplash_1_wkfsan.jpg',
+    'Apple AirPods Pro 2': 'https://res.cloudinary.com/dmandevv-ecommerce/image/upload/v1775295825/insung-yoon-mru38VH7tII-unsplash_f2ctkv.jpg',
+    'Keychron Q1 Pro Mechanical Keyboard': 'https://res.cloudinary.com/dmandevv-ecommerce/image/upload/v1775295363/florian-krumm-1osIUArK5oA-unsplash_mz8k7e.jpg',
+    'Organic Dark Roast Coffee Beans (2 lb)': 'https://res.cloudinary.com/dmandevv-ecommerce/image/upload/v1775295383/mike-kenneally-TD4DBagg2wE-unsplash_acw1af.jpg',
+  };
+
   const productsWithCreator = products.map((p) => ({
     ...p,
     createdBy: adminId,
-    images: [{ publicId: 'placeholder', url: 'https://via.placeholder.com/300x300.png?text=' + encodeURIComponent(p.name) }],
+    images: [{ publicId: `seed/${p.name}`, url: productImages[p.name] || 'https://via.placeholder.com/300x300.png?text=' + encodeURIComponent(p.name) }],
   }));
 
   await Product.insertMany(productsWithCreator);

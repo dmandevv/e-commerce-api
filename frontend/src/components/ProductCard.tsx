@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Star } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -38,7 +39,7 @@ export interface Product {
   stock: number;
   rating: number;
   numOfReviews: number;
-  images: string[];
+  images: { publicId: string; url: string }[];
   reviews: Review[];
   createdAt: string;
 }
@@ -72,11 +73,21 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <Link href={`/products/${product._id}`}>
       <Card className="h-full hover:shadow-md transition-shadow bg-white border-0 shadow-sm group">
-        {/* Image placeholder */}
-        <div className="aspect-square bg-[#f7f7f7] flex items-center justify-center p-6 group-hover:scale-105 transition-transform overflow-hidden rounded-t-lg">
-          <div className="text-4xl text-muted-foreground/30 font-light">
-            {categoryEmoji[product.category] || "📦"}
-          </div>
+        {/* Product image */}
+        <div className="aspect-square bg-[#f7f7f7] flex items-center justify-center overflow-hidden rounded-t-lg">
+          {product.images?.[0]?.url ? (
+            <Image
+              src={product.images[0].url}
+              alt={product.name}
+              width={400}
+              height={400}
+              className="object-cover w-full h-full group-hover:scale-105 transition-transform"
+            />
+          ) : (
+            <div className="text-4xl text-muted-foreground/30 font-light">
+              {categoryEmoji[product.category] || "📦"}
+            </div>
+          )}
         </div>
 
         <CardContent className="p-4">

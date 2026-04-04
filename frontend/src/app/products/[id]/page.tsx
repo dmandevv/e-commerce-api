@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { apiFetch } from "@/lib/api";
 import type { Product } from "@/components/ProductCard";
 import AddToCartButton from "./AddToCartButton";
@@ -97,10 +98,20 @@ export default function ProductPage() {
         <div className="bg-white rounded-lg p-6 md:p-8">
           <div className="grid md:grid-cols-2 gap-8">
             {/* Image */}
-            <div className="bg-[#f7f7f7] rounded-lg flex items-center justify-center aspect-square">
-              <span className="text-8xl">
-                {categoryEmoji[product.category] || "📦"}
-              </span>
+            <div className="bg-[#f7f7f7] rounded-lg flex items-center justify-center aspect-square overflow-hidden">
+              {product.images?.[0]?.url ? (
+                <Image
+                  src={product.images[0].url}
+                  alt={product.name}
+                  width={800}
+                  height={800}
+                  className="object-cover w-full h-full"
+                />
+              ) : (
+                <span className="text-8xl">
+                  {categoryEmoji[product.category] || "📦"}
+                </span>
+              )}
             </div>
 
             {/* Details */}
