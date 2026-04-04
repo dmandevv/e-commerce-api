@@ -3,6 +3,7 @@
 #
 # Run:   kubectl apply -f k8s/jobs/seed-job.yaml
 # Re-run: kubectl delete job seed-database -n ecommerce && kubectl apply -f k8s/jobs/seed-job.yaml
+# Fresh:  Add --fresh arg to wipe and re-seed products
 # Logs:  kubectl logs job/seed-database -n ecommerce
 # ─────────────────────────────────────────────────────────
 apiVersion: batch/v1
@@ -31,6 +32,7 @@ spec:
                 secretKeyRef:
                   name: ecommerce-secrets
                   key: ADMIN_PASSWORD
+          command: ["node", "seed.js", "--fresh"]
           resources:
             requests:
               cpu: 50m
