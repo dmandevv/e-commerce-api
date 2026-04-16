@@ -11,7 +11,7 @@ COPY services/payment-service/prisma.config.ts ./services/payment-service/
 
 # Install dependencies + generate Prisma client
 RUN npm ci --workspace=shared --workspace=@ecommerce/payment-service --include-workspace-root
-RUN cd services/payment-service && npx prisma generate
+RUN cd services/payment-service && DATABASE_URL="postgresql://fake:fake@fake:5432/fake" npx prisma generate
 
 # Copy source and build
 COPY shared/src ./shared/src
@@ -31,7 +31,7 @@ COPY services/payment-service/prisma ./services/payment-service/prisma
 COPY services/payment-service/prisma.config.ts ./services/payment-service/
 
 RUN npm ci --omit=dev --workspace=shared --workspace=@ecommerce/payment-service --include-workspace-root
-RUN cd services/payment-service && npx prisma generate
+RUN cd services/payment-service && DATABASE_URL="postgresql://fake:fake@fake:5432/fake" npx prisma generate
 
 COPY --from=builder /app/shared/dist ./shared/dist
 COPY --from=builder /app/services/payment-service/dist/src ./services/payment-service/dist/src

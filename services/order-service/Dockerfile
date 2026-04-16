@@ -9,9 +9,9 @@ COPY services/order-service/package.json services/order-service/tsconfig.json ./
 COPY services/order-service/prisma ./services/order-service/prisma
 COPY services/order-service/prisma.config.ts ./services/order-service/
 
-# Install dependencies + generate Prisma client
+# Install dependencies
 RUN npm ci --workspace=shared --workspace=@ecommerce/order-service --include-workspace-root
-RUN cd services/order-service && npx prisma generate
+RUN cd services/order-service && DATABASE_URL="postgresql://fake:fake@fake:5432/fake" npx prisma generate
 
 # Copy source and build
 COPY shared/src ./shared/src
@@ -31,7 +31,7 @@ COPY services/order-service/prisma ./services/order-service/prisma
 COPY services/order-service/prisma.config.ts ./services/order-service/
 
 RUN npm ci --omit=dev --workspace=shared --workspace=@ecommerce/order-service --include-workspace-root
-RUN cd services/order-service && npx prisma generate
+RUN cd services/order-service && DATABASE_URL="postgresql://fake:fake@fake:5432/fake" npx prisma generate
 
 COPY --from=builder /app/shared/dist ./shared/dist
 COPY --from=builder /app/services/order-service/dist/src ./services/order-service/dist/src
