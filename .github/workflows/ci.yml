@@ -73,6 +73,9 @@ jobs:
       - name: Generate Prisma clients
         run: npm run prisma:generate
 
+      - name: Build shared package
+        run: npm run build --workspace=shared
+
       # Run all tests with coverage — exits non-zero if:
       # 1. Any test fails, OR
       # 2. Coverage drops below thresholds in vitest.config.ts
