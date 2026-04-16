@@ -496,7 +496,7 @@ describe("createProductReview", () => {
 
 describe("getProductReviews", () => {
   it("should return reviews for a product", async () => {
-    const req = mockReq({ query: { productId: "prod123" } });
+    const req = mockReq({ params: { id: "prod123" } });
     const res = mockRes();
 
     const reviews = [
@@ -516,7 +516,7 @@ describe("getProductReviews", () => {
   });
 
   it("should throw NotFoundError when product doesn't exist", async () => {
-    const req = mockReq({ query: { productId: "nonexistent" } });
+    const req = mockReq({ params: { id: "nonexistent" } });
     const res = mockRes();
 
     mockFindById.mockResolvedValue(null);

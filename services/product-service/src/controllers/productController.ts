@@ -162,7 +162,7 @@ export const createProductReview = async (req: Request, res: Response): Promise<
 
 // ─── Get Product Reviews (public) ───────────────────────
 export const getProductReviews = async (req: Request, res: Response): Promise<void> => {
-  const product = await Product.findById(req.query.productId);
+  const product = await Product.findById(req.params.id);
 
   if (!product) {
     throw new NotFoundError('Product');
