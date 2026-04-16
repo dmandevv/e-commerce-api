@@ -7,9 +7,12 @@ import { errorHandler } from './middleware/errorHandler.js';
 import swaggerSpec from './swagger.js';
 import { requestId } from '@ecommerce/shared/middleware';
 import { metricsMiddleware, metricsEndpoint } from '@ecommerce/shared/metrics';
+import helmet from 'helmet';
 
 export const app = express();
 
+// ─── Middleware ──────────────────────────────────────────
+app.use(helmet());
 app.use(requestId);
 app.use(metricsMiddleware('payment-service'));
 
