@@ -1,14 +1,12 @@
 import express from 'express';
-import mongoose from 'mongoose';
 import swaggerUi from 'swagger-ui-express';
-import { config } from './config/index.js';
 import productRoutes from './routes/productRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import swaggerSpec from './swagger.js';
 import { requestId } from '@ecommerce/shared/middleware';
 import { metricsMiddleware, metricsEndpoint } from '@ecommerce/shared/metrics';
 
-const app = express();
+export const app = express();
 
 // ─── Middleware ──────────────────────────────────────────
 app.use(requestId);
@@ -29,20 +27,3 @@ app.get('/metrics', metricsEndpoint);
 
 // ─── Error Handler (must be last) ───────────────────────
 app.use(errorHandler);
-
-// ─── Start ──────────────────────────────────────────────
-const start = async (): Promise<void> => {
-  try {
-    await mongoose.connect(config.mongoUri);
-    console.log('MongoDB connected');
-
-    app.listen(config.port, () => {
-      console.log(`Product service running on port ${config.port}`);
-    });
-  } catch (err) {
-    console.error('Failed to start product service:', err);
-    process.exit(1);
-  }
-};
-
-start();

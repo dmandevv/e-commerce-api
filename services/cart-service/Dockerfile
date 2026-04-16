@@ -38,4 +38,4 @@ WORKDIR /app/services/cart-service
 
 EXPOSE 3003
 
-CMD ["node", "dist/app.js"]
+CMD ["node", "dist/server.js"]

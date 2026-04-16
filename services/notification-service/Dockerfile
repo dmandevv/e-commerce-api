@@ -38,4 +38,4 @@ WORKDIR /app/services/notification-service
 
 EXPOSE 3006
 
-CMD ["node", "dist/app.js"]
+CMD ["node", "dist/server.js"]

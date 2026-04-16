@@ -1,17 +1,14 @@
 import express from 'express';
 import swaggerUi from 'swagger-ui-express';
-import { config } from './config/index.js';
-import { connectRabbitMQ } from './events/publisher.js';
-import { startConsumer } from './events/consumer.js';
-import { stripeWebhook } from './controllers/paymentController.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import { stripeWebhook } from './controllers/paymentController.js';
 import { asyncHandler } from './middleware/asyncHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import swaggerSpec from './swagger.js';
 import { requestId } from '@ecommerce/shared/middleware';
 import { metricsMiddleware, metricsEndpoint } from '@ecommerce/shared/metrics';
 
-const app = express();
+export const app = express();
 
 app.use(requestId);
 app.use(metricsMiddleware('payment-service'));
@@ -37,19 +34,3 @@ app.get('/health', (_req, res) => {
 app.get('/metrics', metricsEndpoint);
 
 app.use(errorHandler);
-
-const start = async (): Promise<void> => {
-  try {
-    await connectRabbitMQ();
-    await startConsumer();
-
-    app.listen(config.port, () => {
-      console.log(`Payment service running on port ${config.port}`);
-    });
-  } catch (err) {
-    console.error('Failed to start payment service:', err);
-    process.exit(1);
-  }
-};
-
-start();

@@ -38,4 +38,4 @@ WORKDIR /app/services/product-service
 
 EXPOSE 3002
 
-CMD ["node", "dist/app.js"]
+CMD ["node", "dist/server.js"]

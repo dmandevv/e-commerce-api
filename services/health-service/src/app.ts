@@ -1,7 +1,7 @@
 import express from 'express';
 import { config } from './config/index.js';
 
-const app = express();
+export const app = express();
 
 interface ServiceHealth {
   status: 'up' | 'down';
@@ -46,6 +46,4 @@ app.get('/api/health/status', async (_req, res) => {
   });
 });
 
-app.listen(config.port, () => {
-  console.log(`Health service running on port ${config.port}`);
-});
+

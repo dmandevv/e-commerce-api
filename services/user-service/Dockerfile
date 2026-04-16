@@ -38,4 +38,4 @@ WORKDIR /app/services/user-service
 
 EXPOSE 3001
 
-CMD ["node", "dist/app.js"]
+CMD ["node", "dist/server.js"]

@@ -38,4 +38,4 @@ WORKDIR /app/services/health-service
 
 EXPOSE 3007
 
-CMD ["node", "dist/app.js"]
+CMD ["node", "dist/server.js"]
