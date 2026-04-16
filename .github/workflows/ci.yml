@@ -45,7 +45,41 @@ jobs:
       - name: Compile TypeScript
         run: npx tsc --build
 
-  # ─── Job 2: Docker Build Verification ──────────────────
+  # ─── Job 2: Unit + Integration Tests ────────────────────
+  # WHY: Runs all Vitest tests (unit + integration) with coverage.
+  # Coverage thresholds are set in vitest.config.ts (80% statements,
+  # 80% functions, 80% lines, 70% branches). If coverage drops
+  # below these thresholds, the job fails — blocking the PR.
+  test:
+    name: Tests & Coverage
+    runs-on: ubuntu-latest
+    needs: typecheck
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Prisma clients are needed for order-service and payment-service
+      # tests to resolve imports correctly
+      - name: Generate Prisma clients
+        run: npm run prisma:generate
+
+      # Run all tests with coverage — exits non-zero if:
+      # 1. Any test fails, OR
+      # 2. Coverage drops below thresholds in vitest.config.ts
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+  # ─── Job 3: Docker Build Verification ──────────────────
   # WHY: Ensures every service's Dockerfile builds successfully.
   # A passing typecheck doesn't guarantee Docker builds work —
   # Dockerfiles have their own COPY, RUN, and dependency steps
@@ -53,8 +87,8 @@ jobs:
   docker-build:
     name: Docker Build
     runs-on: ubuntu-latest
-    # Don't waste CI minutes if types are broken
-    needs: typecheck
+    # Don't waste CI minutes if types or tests are broken
+    needs: [typecheck, test]
 
     strategy:
       # Build all services in parallel for speed
@@ -85,7 +119,7 @@ jobs:
           load: true
           tags: ecommerce/${{ matrix.service }}:test
 
-  # ─── Job 3: Integration Smoke Test ─────────────────────
+  # ─── Job 4: Integration Smoke Test ─────────────────────
   # WHY: Verifies services actually START and respond to health checks.
   # A Docker image can build fine but crash on startup (missing env vars,
   # bad imports, database connection issues). This catches those.
