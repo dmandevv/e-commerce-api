@@ -41,7 +41,7 @@ async function pollForClientSecret(
 
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "https://api.dmandevv.shop"}/api/payments/${orderId}`,
+        `${process.env.NEXT_PUBLIC_API_URL || ""}/api/payments/${orderId}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -129,7 +129,7 @@ export default function CheckoutPage() {
     try {
       // 1. Create order
       const orderRes = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "https://api.dmandevv.shop"}/api/orders`,
+        `${process.env.NEXT_PUBLIC_API_URL || ""}/api/orders`,
         {
           method: "POST",
           headers: {

@@ -1,4 +1,5 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.dmandevv.shop";
+// Empty string = same origin; Vercel rewrites proxy /api/* to k3s backend
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 export async function apiFetch<T>(
   path: string,
