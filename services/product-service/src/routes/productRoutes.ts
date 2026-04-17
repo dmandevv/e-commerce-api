@@ -16,6 +16,7 @@ import { asyncHandler } from '../middleware/asyncHandler.js';
 import { validate } from '@ecommerce/shared/middleware';
 import { createProductSchema, updateProductSchema, createReviewSchema } from '../schemas/productSchemas.js';
 import { upload } from '../middleware/upload.js';
+import { sanitizeBody } from '@ecommerce/shared/middleware';
 
 const router = Router();
 
@@ -25,11 +26,11 @@ router.get('/:id', asyncHandler(getSingleProduct));
 router.get('/:id/reviews', asyncHandler(getProductReviews));
 
 // Authenticated users
-router.post('/reviews', authenticate, validate(createReviewSchema), asyncHandler(createProductReview));
+router.post('/reviews', authenticate, sanitizeBody, validate(createReviewSchema), asyncHandler(createProductReview));
 
 // Admin only
-router.post('/', authenticate, authorize('admin'), validate(createProductSchema), asyncHandler(createProduct));
-router.patch('/:id', authenticate, authorize('admin'), validate(updateProductSchema), asyncHandler(updateProduct));
+router.post('/', authenticate, authorize('admin'), sanitizeBody, validate(createProductSchema), asyncHandler(createProduct));
+router.patch('/:id', authenticate, authorize('admin'), sanitizeBody, validate(updateProductSchema), asyncHandler(updateProduct));
 router.delete('/:id', authenticate, authorize('admin'), asyncHandler(deleteProduct));
 router.delete('/reviews', authenticate, authorize('admin'), asyncHandler(deleteReview));
 

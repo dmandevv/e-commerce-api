@@ -4,11 +4,12 @@ import { authenticate } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { validate } from '@ecommerce/shared/middleware';
 import { registerSchema, loginSchema } from '../schemas/userSchemas.js';
+import { sanitizeBody } from '@ecommerce/shared/middleware';
 
 const router = Router();
 
 // Public routes
-router.post('/register', validate(registerSchema), asyncHandler(register));
+router.post('/register', sanitizeBody, validate(registerSchema), asyncHandler(register));
 router.post('/login', validate(loginSchema), asyncHandler(login));
 
 // Internal (service-to-service only — not exposed through NGINX,
