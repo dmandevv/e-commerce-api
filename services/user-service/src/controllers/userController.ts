@@ -48,10 +48,28 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     throw new UnauthorizedError('Invalid credentials');
   }
 
+  // check if account has been locked
+  if (user.lockedUntil) {
+    const minsLeft = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60000);
+    if (minsLeft > 0) {
+      throw new UnauthorizedError(`Account Locked. Try again in ${minsLeft} minutes(s)`);
+    }
+  }
+
   const isMatch = await user.comparePassword(password);
   if (!isMatch) {
+    user.failedLoginAttempts += 1;
+    if (user.failedLoginAttempts >= config.maxLoginAttempts) {
+      user.lockedUntil = new Date(Date.now() + (config.lockoutDurationMinutes * 60_000));
+    }
+    await user.save();
     throw new UnauthorizedError('Invalid credentials');
   }
+
+  //successful login - reset login attempts
+  user.failedLoginAttempts = 0;
+  user.lockedUntil = undefined;
+  await user.save();
 
   const token = signToken(user._id.toString(), user.role);
 

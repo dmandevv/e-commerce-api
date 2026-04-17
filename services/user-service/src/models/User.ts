@@ -12,6 +12,8 @@ export interface IUserDocument extends Document {
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
+  failedLoginAttempts: number;
+  lockedUntil?: Date;
 }
 
 // ─── Schema ─────────────────────────────────────────────
@@ -38,6 +40,14 @@ const userSchema = new Schema<IUserDocument>(
       type: String,
       enum: ['customer', 'admin'],
       default: 'customer',
+    },
+    failedLoginAttempts: {
+      type: Number,
+      default: 0,
+    },
+    lockedUntil: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true }
