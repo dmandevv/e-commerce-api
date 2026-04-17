@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import type { Request, Response, NextFunction } from 'express';
 import { ZodType, ZodError } from 'zod';
+import sanitizeHtml from 'sanitize-html';
 
 // Declared here because the shared package compiles independently
 // from the services. It doesn't see their express.d.ts augmentations,
@@ -47,4 +48,41 @@ export function validate(schema: ZodType) {
       next(err);
     }
   };
+}
+
+/**
+ * Recursively sanitizes all string values in an object.
+ * Strips any HTML tags to prevent XSS attacks.
+ */
+function sanitizeValue(value: unknown): unknown {
+  // Plain text passes through unchanged.
+  if (typeof value === 'string') {
+    return sanitizeHtml(value, {
+      allowedTags: [],
+      allowedAttributes: {},
+    });
+  }
+
+  // req.body might look like { tags: ["<script>...", "normal"] }
+  if (Array.isArray(value)) {
+    return value.map(sanitizeValue);
+  }
+
+  // If it's an object (and not null — because typeof null === 'object')
+  if (value !== null && typeof value === 'object') {
+    const result: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(value)) {
+      result[key] = sanitizeValue(val);
+    }
+    return result;
+  }
+
+  return value;
+}
+
+export function sanitizeBody(req: Request, _res: Response, next: NextFunction): void {
+  if (req.body && typeof req.body === 'object') {
+    req.body = sanitizeValue(req.body);
+  }
+  next();
 }
