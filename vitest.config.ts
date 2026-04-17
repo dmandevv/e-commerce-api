@@ -26,6 +26,7 @@ export default defineConfig({
       exclude: [
         "**/*.test.ts", // test files themselves
         "**/app.ts", // server entry points (Express setup, listen calls)
+        "**/server.ts", // server bootstrap (listen calls)
         "**/config/**", // environment config (just reads env vars)
         "**/swagger.ts", // OpenAPI spec definitions
         "**/generated/**", // Prisma generated client code
