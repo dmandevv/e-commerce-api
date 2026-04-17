@@ -81,6 +81,8 @@ jobs:
       # 2. Coverage drops below thresholds in vitest.config.ts
       - name: Run tests with coverage
         run: npm run test:coverage
+        env:
+          JWT_SECRET: ci_test_secret
 
   # ─── Job 3: Docker Build Verification ──────────────────
   # WHY: Ensures every service's Dockerfile builds successfully.
