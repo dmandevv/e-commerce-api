@@ -30,6 +30,13 @@ export default defineConfig({
         "**/config/**", // environment config (just reads env vars)
         "**/swagger.ts", // OpenAPI spec definitions
         "**/generated/**", // Prisma generated client code
+        "**/*.d.ts",       // type declaration files
+        "**/models/**",    // Mongoose model definitions (schema setup)
+        "**/lib/prisma.ts", // database client bootstrap
+        "**/socket/**",    // WebSocket setup
+        "**/events/index.ts", // shared event constants
+        "**/types/**",     // type definitions
+        "**/metrics/**",   // Prometheus setup
       ],
 
       // Output formats: "text" prints a table per file, "text-summary" prints totals
