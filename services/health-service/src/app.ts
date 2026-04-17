@@ -1,5 +1,6 @@
 import express from 'express';
 import { config } from './config/index.js';
+import helmet from 'helmet';
 
 export const app = express();
 
@@ -7,6 +8,9 @@ interface ServiceHealth {
   status: 'up' | 'down';
   latency: number;
 }
+
+// ─── Middleware ──────────────────────────────────────────
+app.use(helmet());
 
 async function checkService(name: string, url: string): Promise<ServiceHealth> {
   const start = Date.now();
