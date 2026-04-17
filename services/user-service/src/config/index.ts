@@ -14,6 +14,8 @@ interface Config {
   jwtExpiresIn: string;
   rabbitmqUrl: string;
   clientUrl: string;
+  maxLoginAttempts: number;
+  lockoutDurationMinutes: number;
 }
 
 export const config: Config = {
@@ -23,6 +25,8 @@ export const config: Config = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1d',
   rabbitmqUrl: process.env.RABBITMQ_URL || 'amqp://admin:admin_password@localhost:5672',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
+  maxLoginAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS || '5', 10),
+  lockoutDurationMinutes: parseInt(process.env.LOCKOUT_DURATION_MINUTES || '15', 10),
 };
 
 if (!config.jwtSecret) {

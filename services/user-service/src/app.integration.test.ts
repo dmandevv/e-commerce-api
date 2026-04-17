@@ -34,6 +34,8 @@ vi.mock('./config/index.js', () => ({
     jwtExpiresIn: '1d',
     rabbitmqUrl: 'amqp://test',
     clientUrl: 'http://localhost:3000',
+    maxLoginAttempts: 3,
+    lockoutDurationMinutes: 15,
   },
 }));
 
@@ -67,12 +69,17 @@ const fakeUser = {
   role: 'customer' as const,
   createdAt: new Date('2026-01-01'),
   updatedAt: new Date('2026-01-01'),
+  failedLoginAttempts: 0,
+  lockedUntil: undefined as Date | undefined,
   comparePassword: vi.fn(),
+  save: vi.fn(),
 };
 
 // ─── Reset all mocks before each test ───────────────────
 beforeEach(() => {
   vi.clearAllMocks();
+  fakeUser.failedLoginAttempts = 0;
+  fakeUser.lockedUntil = undefined;
 });
 
 // ─────────────────────────────────────────────────────────
@@ -212,6 +219,54 @@ describe('POST /api/users/login', () => {
     expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
     expect(res.body.message).toBe("Invalid credentials");
+  });
+  it("should increment failedLoginAttempts on failed login (wrong password)", async () => {
+    mockUser.findOne.mockReturnValue({ select: vi.fn().mockResolvedValue(fakeUser) });
+    fakeUser.comparePassword.mockResolvedValue(false);
+    const res = await request(app)
+      .post('/api/users/login')
+      .send({ email: "test@example.com", password: "wrongpassword" });
+    
+    expect(fakeUser.failedLoginAttempts).toBe(1);
+    expect(fakeUser.lockedUntil).toBe(undefined);
+    expect(fakeUser.save).toHaveBeenCalled();
+  });
+  it('should lock account upon reaching max login attempts', async () => {
+    mockUser.findOne.mockReturnValue({ select: vi.fn().mockResolvedValue(fakeUser) });
+    fakeUser.comparePassword.mockResolvedValue(false);
+    fakeUser.failedLoginAttempts = 2;
+    const res = await request(app)
+      .post('/api/users/login')
+      .send({ email: "test@example.com", password: "wrongpassword" });
+    
+    expect(fakeUser.failedLoginAttempts).toBe(3);
+    expect(fakeUser.lockedUntil).toBeInstanceOf(Date);
+    expect(fakeUser.lockedUntil!.getTime()).toBeGreaterThan(Date.now());
+    expect(fakeUser.save).toHaveBeenCalled();   
+  });
+  it('should reject when account is locked', async () => {
+    mockUser.findOne.mockReturnValue({ select: vi.fn().mockResolvedValue(fakeUser) });
+    fakeUser.lockedUntil = new Date(Date.now() + 1_000_000);
+    const res = await request(app)
+      .post('/api/users/login')
+      .send({ email: "test@example.com", password: "hashedpassword" });
+    
+    expect(fakeUser.lockedUntil).toBeInstanceOf(Date);
+    expect(fakeUser.lockedUntil!.getTime()).toBeGreaterThan(Date.now());
+    expect(fakeUser.save).not.toHaveBeenCalled();   
+  });
+  it('should reset failedLoginAttempts and lockedUntil on successful login', async () => {
+    mockUser.findOne.mockReturnValue({ select: vi.fn().mockResolvedValue(fakeUser) });
+    fakeUser.comparePassword.mockResolvedValue(true);
+    fakeUser.failedLoginAttempts = 3;
+    fakeUser.lockedUntil = new Date(Date.now() - 1_000);
+    const res = await request(app)
+      .post('/api/users/login')
+      .send({ email: "test@example.com", password: "hashedpassword" });
+    
+    expect(fakeUser.failedLoginAttempts).toBe(0);
+    expect(fakeUser.lockedUntil).toBeUndefined();
+    expect(fakeUser.save).toHaveBeenCalled();
   });
 });
 
