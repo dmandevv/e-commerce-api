@@ -287,6 +287,102 @@ describe('POST /api/users/login', () => {
 });
 
 // ─────────────────────────────────────────────────────────
+// POST /api/users/refresh
+// ─────────────────────────────────────────────────────────
+describe('POST /api/users/refresh', () => {
+
+  it("should return 401 when refresh token is missing", async () => {
+    const res = await request(app).post('/api/users/refresh');
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe('No refresh token provided');
+  });
+
+  it("should return 401 when refresh token is invalid", async () => {
+    const { rotateRefreshToken } = await import('./lib/tokens.js');
+    vi.mocked(rotateRefreshToken).mockResolvedValueOnce(null);
+
+    const res = await request(app)
+      .post('/api/users/refresh')
+      .set('Cookie', ['refreshToken=badToken']);
+    
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe('Invalid or expired refresh token');
+
+    const cookies = res.headers['set-cookie'] as unknown as string[];
+    expect(cookies.some((c) => c.startsWith('accessToken=') && c.includes('Expires='))).toBe(true);
+    expect(cookies.some((c) => c.startsWith('refreshToken=') && c.includes('Expires='))).toBe(true);
+  });
+
+  it("should issue new access and refresh token cookies on successful rotation", async () => {
+    const { rotateRefreshToken } = await import('./lib/tokens.js');
+    vi.mocked(rotateRefreshToken).mockResolvedValueOnce({ userId: 'user123', newToken: 'token123' });
+    mockUser.findById.mockResolvedValue(fakeUser);
+
+    const res = await request(app)
+      .post('/api/users/refresh')
+      .set('Cookie', ['refreshToken=old-valid-token']);
+    
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const cookies = res.headers['set-cookie'] as unknown as string[];
+    expect(cookies.some((c) => c.startsWith('accessToken='))).toBe(true);
+    expect(cookies.some((c) => c.startsWith('refreshToken='))).toBe(true);
+  });
+
+  it("should return 401 if user no longer exists", async () => {
+    const { rotateRefreshToken } = await import('./lib/tokens.js');
+    vi.mocked(rotateRefreshToken).mockResolvedValueOnce({ userId: 'deletedUserId', newToken: 'token123' });
+    mockUser.findById.mockResolvedValue(null);
+
+    const res = await request(app)
+      .post('/api/users/refresh')
+      .set('Cookie', ['refreshToken=orphaned-token']);
+    
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe('User not found');
+  });
+});
+
+// ─────────────────────────────────────────────────────────
+// POST /api/users/logout
+// ─────────────────────────────────────────────────────────
+describe('POST /api/users/logout', () => {
+  it("should revoke family and clear cookies when a refresh token is present", async () => {
+    const { revokeFamily } = await import('./lib/tokens.js');
+
+    const res = await request(app)
+      .post('/api/users/logout')
+      .set('Cookie', ['refreshToken=some-valid-token']);
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(revokeFamily).toHaveBeenCalledWith('some-valid-token');
+
+    const cookies = res.headers['set-cookie'] as unknown as string[];
+    expect(cookies.some((c) => c.startsWith('accessToken=') && c.includes('Expires='))).toBe(true);
+    expect(cookies.some((c) => c.startsWith('refreshToken=') && c.includes('Expires='))).toBe(true);
+  });
+
+  it("should succeed and clear cookies even when no refresh token is present", async () => {
+    const { revokeFamily } = await import('./lib/tokens.js');
+
+    const res = await request(app).post('/api/users/logout');
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    // revokeFamily should NOT be called when there's no cookie
+    expect(revokeFamily).not.toHaveBeenCalled();
+
+    const cookies = res.headers['set-cookie'] as unknown as string[];
+    expect(cookies.some((c) => c.startsWith('accessToken=') && c.includes('Expires='))).toBe(true);
+    expect(cookies.some((c) => c.startsWith('refreshToken=') && c.includes('Expires='))).toBe(true);
+  });
+});
+
+
+
+// ─────────────────────────────────────────────────────────
 // GET /api/users/profile
 // ─────────────────────────────────────────────────────────
 describe('GET /api/users/profile', () => {

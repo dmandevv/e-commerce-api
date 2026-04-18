@@ -27,10 +27,7 @@ interface IOrder {
   createdAt: string;
 }
 
-async function pollForClientSecret(
-  orderId: string,
-  token: string
-): Promise<string> {
+async function pollForClientSecret(orderId: string): Promise<string> {
   const MAX_RETRIES = 20;
   const DELAY_MS = 1000;
 
@@ -43,9 +40,9 @@ async function pollForClientSecret(
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || ""}/api/payments/${orderId}`,
         {
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -67,7 +64,7 @@ async function pollForClientSecret(
 }
 
 export default function CheckoutPage() {
-  const { token, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const { cart } = useCartContext();
   const router = useRouter();
 
@@ -78,10 +75,10 @@ export default function CheckoutPage() {
 
   // ─── Auth guard ───────────────────────────────────────────
   useEffect(() => {
-    if (!authLoading && !token) {
+    if (!authLoading && !isAuthenticated) {
       router.replace("/auth/login");
     }
-  }, [authLoading, token, router]);
+  }, [authLoading, isAuthenticated, router]);
 
   if (authLoading) {
     return (
@@ -91,7 +88,7 @@ export default function CheckoutPage() {
     );
   }
 
-  if (!token) return null; // Will redirect
+  if (!isAuthenticated) return null; // Will redirect
 
   // ─── Empty cart guard ───────────────────────────────────────
   if (!cart || cart.items.length === 0) {
@@ -132,9 +129,9 @@ export default function CheckoutPage() {
         `${process.env.NEXT_PUBLIC_API_URL || ""}/api/orders`,
         {
           method: "POST",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -149,7 +146,7 @@ export default function CheckoutPage() {
       setOrderId(order.id);
 
       // 2. Poll for client secret
-      const secret = await pollForClientSecret(order.id, token);
+      const secret = await pollForClientSecret(order.id);
       setClientSecret(secret);
 
       // 4. Move to payment stage

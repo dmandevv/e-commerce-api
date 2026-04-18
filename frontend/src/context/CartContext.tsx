@@ -43,7 +43,7 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const { token, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [cart, setCart] = useState<ICart | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -52,14 +52,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // ─── Fetch cart from API ───────────────────────────────
 
-  const fetchCart = useCallback(async (authToken: string) => {
+  const fetchCart = useCallback(async () => {
     try {
-      const res = await apiFetch<{ success: boolean; data: ICart }>(
-        "/api/cart",
-        {
-          headers: { Authorization: `Bearer ${authToken}` },
-        }
-      );
+      const res = await apiFetch<{ success: boolean; data: ICart }>("/api/cart");
       setCart(res.data);
     } catch (err) {
       console.error("Failed to fetch cart:", err);
@@ -70,25 +65,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // ─── Initialize cart on auth state change ───────────────
 
   useEffect(() => {
-    // Skip if auth is still loading
     if (authLoading) return;
 
     setLoading(true);
 
-    // If user is authenticated, fetch their cart
-    if (token) {
-      fetchCart(token).finally(() => setLoading(false));
+    if (isAuthenticated) {
+      fetchCart().finally(() => setLoading(false));
     } else {
-      // No token → clear cart and stop loading
       setCart(null);
       setLoading(false);
     }
-  }, [token, authLoading, fetchCart]);
+  }, [isAuthenticated, authLoading, fetchCart]);
 
   // ─── Optimistic mutations ───────────────────────────────
 
   const addItem = async (productId: string, quantity: number) => {
-    if (!token) return;
+    if (!isAuthenticated) return;
 
     // Snapshot current state
     const prevCart = cart;
@@ -127,7 +119,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         "/api/cart/items",
         {
           method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
           body: JSON.stringify({ productId, quantity }),
         }
       );
@@ -140,7 +131,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const removeItem = async (productId: string) => {
-    if (!token) return;
+    if (!isAuthenticated) return;
 
     const prevCart = cart;
 
@@ -161,7 +152,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         `/api/cart/items/${productId}`,
         {
           method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
         }
       );
       setCart(res.data);
@@ -173,7 +163,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const updateQuantity = async (productId: string, quantity: number) => {
-    if (!token) return;
+    if (!isAuthenticated) return;
 
     const prevCart = cart;
 
@@ -195,7 +185,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         `/api/cart/items/${productId}`,
         {
           method: "PATCH",
-          headers: { Authorization: `Bearer ${token}` },
           body: JSON.stringify({ quantity }),
         }
       );
@@ -208,7 +197,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const clearCart = async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
 
     const prevCart = cart;
 
@@ -219,7 +208,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       await apiFetch("/api/cart", {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
       });
     } catch (err) {
       console.error("Failed to clear cart:", err);
@@ -229,8 +217,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshCart = async () => {
-    if (!token) return;
-    await fetchCart(token);
+    if (!isAuthenticated) return;
+    await fetchCart();
   };
 
   return (
