@@ -1,6 +1,4 @@
 import { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
-import type { StringValue } from 'ms';
 import { User } from '../models/User.js';
 import { config } from '../config/index.js';
 import {
@@ -9,13 +7,28 @@ import {
   NotFoundError,
 } from '@ecommerce/shared/errors';
 import type { ApiResponse, IUser } from '@ecommerce/shared/types';
+import { signAccessToken, issueRefreshToken, rotateRefreshToken, revokeFamily } from '../lib/tokens.js';
 
-// ─── Helper ─────────────────────────────────────────────
-const signToken = (id: string, role: string): string => {
-  return jwt.sign({ id, role }, config.jwtSecret, {
-    expiresIn: config.jwtExpiresIn as StringValue,
+function setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
+  // Access token — readable by all services (so they can authenticate requests)
+  res.cookie('accessToken', accessToken, {
+    httpOnly: true,
+    secure: config.cookieSecure,
+    sameSite: 'lax',
+    maxAge: 15 * 60 * 1000, // 15 min
+    path: '/',
   });
-};
+
+  // Refresh token — only sent to /api/users/refresh and /api/users/logout
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: config.cookieSecure,
+    sameSite: 'lax',
+    maxAge: config.refreshTokenExpiresInDays * 24 * 60 * 60 * 1000,
+    path: '/api/users',
+  });
+}
+
 
 // ─── Register ───────────────────────────────────────────
 export const register = async (req: Request, res: Response): Promise<void> => {
@@ -27,13 +40,23 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   }
 
   const user = await User.create({ name, email, password, role: 'customer' });
-  const token = signToken(user._id.toString(), user.role);
+  
+  const accessToken = signAccessToken(user._id.toString(), user.role);
+  const refreshToken = await issueRefreshToken(user._id.toString());
+  setAuthCookies(res, accessToken, refreshToken);
 
   // TODO: publish USER_REGISTERED event to RabbitMQ (Step 5)
 
-  const response: ApiResponse<{ token: string }> = {
+  const response: ApiResponse<{ user: Partial<IUser> }> = {
     success: true,
-    data: { token },
+    data: {
+      user: {
+        id: user._id.toString(),
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    },
   };
 
   res.status(201).json(response);
@@ -71,12 +94,13 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   user.lockedUntil = undefined;
   await user.save();
 
-  const token = signToken(user._id.toString(), user.role);
+  const accessToken = signAccessToken(user._id.toString(), user.role);
+  const refreshToken = await issueRefreshToken(user._id.toString());  // ← writes to mongoDB
+  setAuthCookies(res, accessToken, refreshToken);
 
-  const response: ApiResponse<{ token: string; user: Partial<IUser> }> = {
+  const response: ApiResponse<{ user: Partial<IUser> }> = {
     success: true,
     data: {
-      token,
       user: {
         id: user._id.toString(),
         name: user.name,

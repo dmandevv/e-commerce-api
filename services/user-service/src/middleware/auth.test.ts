@@ -88,7 +88,7 @@ describe("authenticate", () => {
 
   it("should throw UnauthorizedError if token verification fails", () => {
     // Override verify() to throw (simulates expired or tampered token)
-    vi.mocked(jwt.verify).mockImplementation(() => {
+    vi.mocked(jwt.verify).mockImplementationOnce(() => {
       throw new Error("jwt expired");
     });
 
@@ -102,6 +102,49 @@ describe("authenticate", () => {
       "Invalid or expired token"
     );
   });
+
+  it("should set req.user and call next() with a valid cookie token", () => {
+    const req = mockReq({ cookies: { accessToken: "cookie-token" } });
+    const res = mockRes();
+    const next = vi.fn();
+
+    authenticate(req, res, next);
+
+    // jwt.verify was called with the token (after splitting "Bearer xxx")
+    // and our test secret
+    expect(jwt.verify).toHaveBeenCalledWith("cookie-token", "test-secret");
+    // The decoded payload should be attached to req.user
+    expect(req.user).toEqual({ id: "user123", role: "customer" });
+    // next() called — request continues to the route handler
+    expect(next).toHaveBeenCalled();
+  });
+
+  it("should prefer cookie token over Bearer header when both are present", () => {
+    const req = mockReq({ 
+      headers: { authorization: "Bearer bearer-token" },
+      cookies: { accessToken: "cookie-token" },
+    });
+    const res = mockRes();
+    const next = vi.fn();
+
+    authenticate(req, res, next);
+
+    expect(jwt.verify).toHaveBeenCalledWith("cookie-token", "test-secret");
+    expect(next).toHaveBeenCalled();
+  });
+
+  it("should throw UnauthorizedError if neither cookie nor Bearer header present", () => {
+    // Empty cookies AND empty headers
+    const req = mockReq({ cookies: {} });
+    const res = mockRes();
+    const next = vi.fn();
+
+    expect(() => authenticate(req, res, next)).toThrow(
+      "Login first to access this resource"
+    );
+    expect(next).not.toHaveBeenCalled();
+  });
+
 });
 
 // ─── authorize ─────────────────────────────────────────────────────

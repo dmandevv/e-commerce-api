@@ -24,6 +24,16 @@ vi.mock('./models/User.js', () => ({
   User: mockUser,
 }));
 
+// ─── Mock Tokens ────────────────────────────────
+// Refresh tokens are stored in mongoDB
+vi.mock('./lib/tokens.js', () => ({
+  signAccessToken: vi.fn(() => 'fake-access-token'),
+  issueRefreshToken: vi.fn(async () => 'fake-refresh-token'),
+  rotateRefreshToken: vi.fn(),
+  revokeFamily: vi.fn(),
+}));
+
+
 // ─── Mock config ────────────────────────────────────────
 // Provide a known JWT secret so we can create valid tokens in tests.
 vi.mock('./config/index.js', () => ({
@@ -31,7 +41,10 @@ vi.mock('./config/index.js', () => ({
     port: 3001,
     mongoUri: 'mongodb://test',
     jwtSecret: 'test-secret-key',
-    jwtExpiresIn: '1d',
+    accessTokenExpiresIn: '15m',
+    refreshTokenExpiresInDays: 7,
+    cookieSecure: false,
+    cookieDomain: '',
     rabbitmqUrl: 'amqp://test',
     clientUrl: 'http://localhost:3000',
     maxLoginAttempts: 3,
@@ -87,7 +100,7 @@ beforeEach(() => {
 // ─────────────────────────────────────────────────────────
 describe('POST /api/users/register', () => {
   // Test 1: Successful registration
-  it('should register a new user and return 201 with token', async () => {
+  it('should register a new user and return 201 with user info', async () => {
     // No existing user with this email
     mockUser.findOne.mockResolvedValue(null);
     // User.create returns our fake user
@@ -100,12 +113,11 @@ describe('POST /api/users/register', () => {
     // Verify the response
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
-    expect(res.body.data.token).toBeDefined();
 
-    // Verify the token is valid and contains the right payload
-    const decoded = jwt.verify(res.body.data.token, JWT_SECRET) as jwt.JwtPayload;
-    expect(decoded.id).toBe('user123');
-    expect(decoded.role).toBe('customer');
+    // Check cookies are set (Set-Cookie is an array of cookie strings)
+    const cookies = res.headers['set-cookie'] as unknown as string[];
+    expect(cookies.some((c) => c.startsWith('accessToken='))).toBe(true);
+    expect(cookies.some((c) => c.startsWith('refreshToken='))).toBe(true);
 
     // Verify User.create was called with the right data
     expect(mockUser.create).toHaveBeenCalledWith({
@@ -161,19 +173,23 @@ describe('POST /api/users/register', () => {
 // POST /api/users/login
 // ─────────────────────────────────────────────────────────
 describe('POST /api/users/login', () => {
-  // Test 1: Successful login (200 + token + user)
+  // Test 1: Successful login (200 + cookie + user)
   it("should return token and user data with a 200 status", async () => {
     mockUser.findOne.mockReturnValue({ select: vi.fn().mockResolvedValue(fakeUser) });
     fakeUser.comparePassword.mockResolvedValue(true);
+
     const res = await request(app)
       .post('/api/users/login')
       .send({ email: "test@example.com", password: "hashedpassword" });
+
     // Verify the response
     expect(res.status).toBe(200);
-    expect(res.body.data.token).toBeDefined();
-    const decoded = jwt.verify(res.body.data.token, JWT_SECRET) as jwt.JwtPayload;
-    expect(decoded.id).toBe("user123");
-    expect(decoded.role).toBe('customer');    
+
+    // Check cookies are set (Set-Cookie is an array of cookie strings)
+    const cookies = res.headers['set-cookie'] as unknown as string[];
+    expect(cookies.some((c) => c.startsWith('accessToken='))).toBe(true);
+    expect(cookies.some((c) => c.startsWith('refreshToken='))).toBe(true);
+        
     expect(res.body.data.user).toEqual({
       id: "user123",
       name: "Test User",
