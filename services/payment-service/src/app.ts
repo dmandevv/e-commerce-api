@@ -8,6 +8,7 @@ import swaggerSpec from './swagger.js';
 import { requestId } from '@ecommerce/shared/middleware';
 import { metricsMiddleware, metricsEndpoint } from '@ecommerce/shared/metrics';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 
 export const app = express();
 
@@ -25,6 +26,7 @@ app.post(
 
 // JSON parsing for all other routes
 app.use(express.json());
+app.use(cookieParser());
 
 // ─── API Docs ───────────────────────────────────────────
 app.use('/api/payments/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

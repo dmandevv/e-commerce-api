@@ -10,14 +10,22 @@ export const authenticate = (
   _res: Response,
   next: NextFunction
 ): void => {
-  const authHeader = req.headers.authorization;
+  // 1. Try the httpOnly accessToken cookie (browser clients)
+  const cookieToken = req.cookies?.accessToken;
 
-  if (!authHeader?.startsWith('Bearer ')) {
+  // 2. Fall back to Authorization: Bearer header (service-to-service, old clients)
+  const authHeader = req.headers.authorization;
+  // only extracted if the header exists AND starts with Bearer . Otherwise undefined.
+  const bearerToken = authHeader?.startsWith('Bearer ')
+    ? authHeader.split(' ')[1]
+    : undefined;
+
+  const token = cookieToken || bearerToken;
+
+  if (!token) {
     throw new UnauthorizedError('Login first to access this resource');
   }
-
-  const token = authHeader.split(' ')[1];
-
+  
   try {
     const decoded = jwt.verify(token, config.jwtSecret) as JwtPayload;
     req.user = decoded;
