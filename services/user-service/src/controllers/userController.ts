@@ -150,3 +150,48 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
 
   res.status(200).json(response);
 };
+
+// ─── Refresh Tokens ─────────────────────────────────────
+export const refresh = async (req: Request, res: Response): Promise<void> => {
+  const incomingToken = req.cookies?.refreshToken;
+  if (!incomingToken) {
+    throw new UnauthorizedError('No refresh token provided');
+  }
+
+  const result = await rotateRefreshToken(incomingToken);
+  if (!result) {
+    res.clearCookie('accessToken', { path: '/' });
+    res.clearCookie('refreshToken', { path: '/api/users' });
+    throw new UnauthorizedError('Invalid or expired refresh token');
+  }
+
+  //re-fetch - users role could have changed or have been deleted
+  const user = await User.findById(result.userId);
+  if (!user) {
+    throw new UnauthorizedError('User not found');
+  }
+
+  const accessToken = signAccessToken(result.userId, user.role);
+  setAuthCookies(res, accessToken, result.newToken);
+
+  res.status(200).json({ success: true });
+}
+
+// ─── Logout ─────────────────────────────────────────────
+export const logout = async (req: Request, res: Response): Promise<void> => {
+  const refreshToken = req.cookies?.refreshToken;
+
+  // Defense-in-depth. If a user logs out, we want every outstanding 
+  // refresh token in their session chain dead — not just the current one. 
+  // In practice it's usually the same thing, but if some edge case left a 
+  // sibling token alive, revoking the family guarantees cleanup.
+  if (refreshToken) {
+    await revokeFamily(refreshToken);
+  }
+
+  // Always clear cookies (safe even if they weren't set)
+  res.clearCookie('accessToken', { path: '/' });
+  res.clearCookie('refreshToken', { path: '/api/users' });
+
+  res.status(200).json({ success: true });
+}

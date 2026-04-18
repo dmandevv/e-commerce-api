@@ -15,14 +15,14 @@ export default function AddToCartButton({
   inStock: boolean;
   stock: number;
 }) {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { addItem } = useCartContext();
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
   const [message, setMessage] = useState("");
 
   async function handleAddToCart() {
-    if (!token) {
+    if (!isAuthenticated) {
       setMessage("Please sign in to add items to your cart");
       return;
     }
