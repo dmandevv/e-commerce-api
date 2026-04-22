@@ -1,6 +1,6 @@
 # E-Commerce Platform Roadmap
 
-> **Last updated:** 2026-04-01
+> **Last updated:** 2026-04-21
 > **Goal:** Transform the current project into a production-grade e-commerce platform comparable to Amazon.ca, following industry-standard practices for security, reliability, and user experience.
 
 ---
@@ -126,15 +126,15 @@
 - [x] Add tests to CI pipeline (fail PR if coverage drops) — Job 2 in ci.yml runs vitest with coverage thresholds
 
 #### 1.2 - Authentication & Security
-- [ ] Implement refresh token rotation (short-lived access token + long-lived refresh token in httpOnly cookie)
-- [ ] Add token revocation (Redis blacklist or versioned tokens)
+- [x] Implement refresh token rotation (short-lived access token + long-lived refresh token in httpOnly cookie) — family-based rotation with reuse detection, MongoDB-backed opaque refresh tokens
+- [x] Move JWT from localStorage to httpOnly secure cookies (prevent XSS token theft) — access cookie (Path=/, 15m) + refresh cookie (Path=/api/users, 7d); silent refresh on 401 in frontend
+- [ ] Add token revocation (Redis blacklist or versioned tokens) — refresh family revocation done on logout; access-token blacklist still pending
 - [ ] Implement email verification on registration (send verification link, activate account)
 - [ ] Implement password reset flow (forgot password -> email link -> reset form)
-- [ ] Move JWT from localStorage to httpOnly secure cookies (prevent XSS token theft)
 - [ ] Add CSRF protection middleware
-- [ ] Sanitize all user-generated content (reviews, names) with DOMPurify or similar
-- [ ] Implement account lockout after N failed login attempts
-- [ ] Add security headers (Helmet.js): Content-Security-Policy, X-Frame-Options, etc.
+- [x] Sanitize all user-generated content (reviews, names) with DOMPurify or similar
+- [x] Implement account lockout after N failed login attempts
+- [x] Add security headers (Helmet.js): Content-Security-Policy, X-Frame-Options, etc.
 - [ ] Audit and rotate all secrets; use strong randomly generated JWT secrets
 - [ ] Set up proper CORS allowlists per environment (no wildcard `*` in production)
 
