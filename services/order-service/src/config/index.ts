@@ -12,6 +12,7 @@ interface Config {
   databaseUrl: string;
   jwtSecret: string;
   rabbitmqUrl: string;
+  redisUrl: string;
   productServiceUrl: string;
   cartServiceUrl: string;
 }
@@ -21,6 +22,7 @@ export const config: Config = {
   databaseUrl: process.env.DATABASE_URL || '',
   jwtSecret: process.env.JWT_SECRET || '',
   rabbitmqUrl: process.env.RABBITMQ_URL || 'amqp://admin:admin_password@localhost:5672',
+  redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
   productServiceUrl: process.env.PRODUCT_SERVICE_URL || 'http://localhost:3002',
   cartServiceUrl: process.env.CART_SERVICE_URL || 'http://localhost:3003',
 };

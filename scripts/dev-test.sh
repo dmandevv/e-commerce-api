@@ -30,7 +30,7 @@ cleanup() {
     kill "$pid" 2>/dev/null
   done
   echo "Stopping containers..."
-  docker compose --env-file .env.local down
+  docker compose --env-file .env down
   echo "Done."
   exit 0
 }

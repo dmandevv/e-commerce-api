@@ -120,10 +120,13 @@ services:
       MONGODB_URI: mongodb://admin:admin@mongodb:27017/user-service?authSource=admin
       JWT_SECRET: ${JWT_SECRET:-dev_secret_change_in_production}
       RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
+      REDIS_URL: redis://redis:6379
     depends_on:
       mongodb:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     # WHY wget not curl: Alpine images don't include curl by default.
     # wget is built into busybox which comes with Alpine.
@@ -202,12 +205,15 @@ services:
       DATABASE_URL: postgresql://admin:admin@postgres:5432/ecommerce?schema=orders
       JWT_SECRET: ${JWT_SECRET:-dev_secret_change_in_production}
       RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
+      REDIS_URL: redis://redis:6379
       PRODUCT_SERVICE_URL: http://product-service:3002
       CART_SERVICE_URL: http://cart-service:3003
     depends_on:
       postgres:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: wget -qO- http://127.0.0.1:3004/health || exit 1
@@ -229,12 +235,15 @@ services:
       DATABASE_URL: postgresql://admin:admin@postgres:5432/ecommerce?schema=payments
       JWT_SECRET: ${JWT_SECRET:-dev_secret_change_in_production}
       RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
+      REDIS_URL: redis://redis:6379
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
     depends_on:
       postgres:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: wget -qO- http://127.0.0.1:3005/health || exit 1
