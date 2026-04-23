@@ -2,9 +2,10 @@
 // These middlewares run on every request across all services.
 
 import { describe, it, expect, vi } from "vitest";
-import { requestId, validate } from "./index.js";
+import { requestId, validate, csrfProtection, issueCsrfToken } from "./index.js";
 // z is Zod — the schema validation library used for request body parsing
-import { z } from "zod";
+import { any, z } from "zod";
+import { fa } from "zod/locales";
 
 // ─── Helper: create fake Express req/res/next objects ───────────────
 // In real Express, req/res are complex objects with many methods.
@@ -27,6 +28,22 @@ function mockRes() {
     status: vi.fn().mockReturnThis(),
     // json() sends the response body
     json: vi.fn(),
+  } as any;
+}
+
+function mockCsrfReq(overrides: { method?: string; cookies?: Record<string, string>; headers?: Record<string, string> } = {}) {
+  return {
+    method: overrides.method ?? 'POST',
+    cookies: overrides.cookies ?? {},
+    headers: overrides.headers ?? {},
+  } as any;
+}
+
+function mockCsrfRes() {
+  return {
+    status: vi.fn().mockReturnThis(),
+    json: vi.fn(),
+    cookie: vi.fn(),
   } as any;
 }
 
@@ -127,5 +144,135 @@ describe("validate middleware", () => {
     // req.body should only have the schema-defined fields
     expect(req.body).toEqual({ name: "John", age: 25 });
     expect(req.body.extra).toBeUndefined();
+  });
+});
+
+// ─── csrfProtection middleware ──────────────────────────────────────
+
+describe('csrfProtection middleware', () => {
+  it('should skip token check for get requests', () => {
+    const req = mockCsrfReq({ method: 'GET' });
+    const res = mockCsrfRes();
+    const next = vi.fn();
+
+    csrfProtection(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
+  });
+  it('should reject with 403 when CSRF cookie is missing (foreign origin attack)', () => {
+    const req = mockCsrfReq({
+      headers: { 'x-csrf-token': 'hacker-actually-guessed-token' }
+    });
+    const res = mockCsrfRes();
+    const next = vi.fn();
+
+    csrfProtection(req, res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({ success: false, message: 'CSRF validation failed' });
+  });
+  it('should reject with 403 when CSRF header is missing (client error)', () =>{
+    const req = mockCsrfReq({
+      cookies: { csrfToken: 'valid-token' }
+    });
+    const res = mockCsrfRes();
+    const next = vi.fn();
+
+    csrfProtection(req, res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({ success: false, message: 'CSRF validation failed' });
+  }); 
+  it('should reject with 403 when cookie and header lengths differ', () => {
+    const req = mockCsrfReq({
+      cookies: { csrfToken: 'short-token' },
+      headers: { 'x-csrf-token': 'much-longer-token' }
+    });
+    const res = mockCsrfRes();
+    const next = vi.fn();
+
+    csrfProtection(req, res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({ success: false, message: 'CSRF validation failed' });
+
+  });
+  it('should reject with 403 when cookie and header lengths are same but values differ', () => {
+    const req = mockCsrfReq({
+      cookies: { csrfToken: 'token1' },
+      headers: { 'x-csrf-token': 'token2' }
+    });
+    const res = mockCsrfRes();
+    const next = vi.fn();
+
+    csrfProtection(req, res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({ success: false, message: 'CSRF validation failed' });
+  });
+  it('should call next() when cookie and header tokens match', () => {
+    const req = mockCsrfReq({
+      cookies: { csrfToken: 'token' },
+      headers: { 'x-csrf-token': 'token' }
+    });
+    const res = mockCsrfRes();
+    const next = vi.fn();
+
+    csrfProtection(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
+  });
+
+});
+
+// ─── issueCsrfToken helper ──────────────────────────────────────────
+
+describe('issueCsrfToken helper', () => {
+  it('should return a 64 byte hex string', () => {
+    const res = mockCsrfRes();
+    const token = issueCsrfToken(res, { secure: false });
+
+    expect(token).toHaveLength(64);
+    expect(token).toMatch(/^[0-9a-f]{64}$/);
+  });
+  it('should set cookie with httpOnly:false so frontend JS can read it', () => {
+    const res = mockCsrfRes();
+    const token = issueCsrfToken(res, { secure: false });
+
+    expect(res.cookie).toHaveBeenCalledWith(
+      'csrfToken', 
+      token,
+      expect.objectContaining({ 
+        httpOnly: false,
+        sameSite: 'lax',
+        maxAge: 2 * 60 * 60 * 1000, //2 hours
+        path: '/',
+      })
+    );
+  });
+  it('should set respect the secure flag', () => {
+    const resProduction = mockCsrfRes();
+    const resDevelop = mockCsrfRes();
+    issueCsrfToken(resProduction, { secure: true });
+    issueCsrfToken(resDevelop, { secure: false });
+
+    expect(resProduction.cookie).toHaveBeenCalledWith(
+      'csrfToken', 
+      expect.any(String),
+      expect.objectContaining({ secure: true })
+    );
+    expect(resDevelop.cookie).toHaveBeenCalledWith(
+      'csrfToken', 
+      expect.any(String),
+      expect.objectContaining({ secure: false })
+    );
   });
 });

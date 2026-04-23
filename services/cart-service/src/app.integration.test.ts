@@ -60,6 +60,13 @@ const JWT_SECRET = 'test-secret-key';
 const createToken = (id: string, role: string = 'customer') =>
   jwt.sign({ id, role }, JWT_SECRET, { expiresIn: '1d' });
 
+// Attach CSRF cookie + matching header for mutating requests.
+// csrfProtection runs before routes, so every POST/PATCH/DELETE needs both.
+const withCsrf = (req: request.Test, extraCookies: string[] = []): request.Test =>
+  req
+    .set('Cookie', ['csrfToken=test-csrf', ...extraCookies])
+    .set('X-CSRF-Token', 'test-csrf');
+
 const customerToken = createToken('user1', 'customer');
 
 // Fake cart data — what cartRepository returns
@@ -123,8 +130,7 @@ describe('POST /api/cart/items', () => {
 
     mockCartRepo.addItem.mockResolvedValue(fakeCart);
 
-    const res = await request(app)
-      .post('/api/cart/items')
+    const res = await withCsrf(request(app).post('/api/cart/items'))
       .set('Authorization', `Bearer ${customerToken}`)
       .send({ productId: 'prod1', quantity: 1 });
 
@@ -150,8 +156,7 @@ describe('POST /api/cart/items', () => {
       }),
     } as Response);
 
-    const res = await request(app)
-      .post('/api/cart/items')
+    const res = await withCsrf(request(app).post('/api/cart/items'))
       .set('Authorization', `Bearer ${customerToken}`)
       .send({ productId: 'prod1', quantity: 1 });
 
@@ -170,8 +175,7 @@ describe('POST /api/cart/items', () => {
       }),
     } as Response);
 
-    const res = await request(app)
-      .post('/api/cart/items')
+    const res = await withCsrf(request(app).post('/api/cart/items'))
       .set('Authorization', `Bearer ${customerToken}`)
       .send({ productId: 'prod1', quantity: 10 });
 
@@ -181,11 +185,10 @@ describe('POST /api/cart/items', () => {
 
   // invalid body (400) — missing productId
   it('should return 400 when body params are missing', async () => {
-    const res = await request(app)
-      .post('/api/cart/items')
+    const res = await withCsrf(request(app).post('/api/cart/items'))
       .set('Authorization', `Bearer ${customerToken}`)
       .send({ });
-    
+
     expect(res.status).toBe(400);
     expect(res.body.errors).toEqual(
       expect.arrayContaining([
@@ -210,8 +213,7 @@ describe('PATCH /api/cart/items/:productId', () => {
   // update quantity (200)
   it("should update quantity for item already in cart and return 200", async () => {
     mockCartRepo.updateQuantity.mockResolvedValue(fakeCart);
-    const res = await request(app)
-      .patch('/api/cart/items/productId')
+    const res = await withCsrf(request(app).patch('/api/cart/items/productId'))
       .set('Authorization', `Bearer ${customerToken}`)
       .send({ quantity: 1 });
     expect(res.status).toBe(200);
@@ -226,8 +228,7 @@ describe('DELETE /api/cart/items/:productId', () => {
   // remove item (200)
   it("should remove item in cart and return 200", async () => {
     mockCartRepo.removeItem.mockResolvedValue({ ...fakeCart, items: [] });
-    const res = await request(app)
-      .del('/api/cart/items/name')
+    const res = await withCsrf(request(app).del('/api/cart/items/name'))
       .set('Authorization', `Bearer ${customerToken}`)
     expect(mockCartRepo.removeItem).toHaveBeenCalledWith('user1', 'name');
     expect(res.status).toBe(200);
@@ -242,8 +243,7 @@ describe('DELETE /api/cart', () => {
   // clear cart (200)
     it("should clear cart and return 200", async () => {
     mockCartRepo.clearCart.mockResolvedValue(undefined);
-    const res = await request(app)
-      .del('/api/cart')
+    const res = await withCsrf(request(app).del('/api/cart'))
       .set('Authorization', `Bearer ${customerToken}`)
     expect(mockCartRepo.clearCart).toHaveBeenCalledWith('user1');
     expect(res.status).toBe(200);

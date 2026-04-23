@@ -8,6 +8,8 @@ import {
 } from '@ecommerce/shared/errors';
 import type { ApiResponse, IUser } from '@ecommerce/shared/types';
 import { signAccessToken, issueRefreshToken, rotateRefreshToken, revokeFamily } from '../lib/tokens.js';
+import { issueCsrfToken } from '@ecommerce/shared/middleware';
+
 
 function setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
   // Access token — readable by all services (so they can authenticate requests)
@@ -27,6 +29,8 @@ function setAuthCookies(res: Response, accessToken: string, refreshToken: string
     maxAge: config.refreshTokenExpiresInDays * 24 * 60 * 60 * 1000,
     path: '/api/users',
   });
+
+  issueCsrfToken(res, { secure: config.cookieSecure });
 }
 
 
@@ -192,6 +196,12 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
   // Always clear cookies (safe even if they weren't set)
   res.clearCookie('accessToken', { path: '/' });
   res.clearCookie('refreshToken', { path: '/api/users' });
+  res.clearCookie('csrfToken', { path: '/' });
 
   res.status(200).json({ success: true });
+}
+
+export const getCsrfToken = async (_req: Request, res: Response): Promise<void> => {
+  issueCsrfToken(res, { secure: config.cookieSecure });
+  res.status(204).end();
 }

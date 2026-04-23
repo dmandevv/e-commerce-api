@@ -5,7 +5,7 @@ import { stripeWebhook } from './controllers/paymentController.js';
 import { asyncHandler } from './middleware/asyncHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import swaggerSpec from './swagger.js';
-import { requestId } from '@ecommerce/shared/middleware';
+import { requestId, csrfProtection  } from '@ecommerce/shared/middleware';
 import { metricsMiddleware, metricsEndpoint } from '@ecommerce/shared/metrics';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -27,6 +27,7 @@ app.post(
 // JSON parsing for all other routes
 app.use(express.json());
 app.use(cookieParser());
+app.use(csrfProtection);
 
 // ─── API Docs ───────────────────────────────────────────
 app.use('/api/payments/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

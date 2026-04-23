@@ -1,12 +1,14 @@
 import { Router } from 'express';
-import { register, login, getProfile, getUserById, refresh, logout } from '../controllers/userController.js';
+import { register, login, getProfile, getUserById, refresh, logout, getCsrfToken } from '../controllers/userController.js';
 import { authenticate } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
-import { validate } from '@ecommerce/shared/middleware';
+import { validate, sanitizeBody } from '@ecommerce/shared/middleware';
 import { registerSchema, loginSchema } from '../schemas/userSchemas.js';
-import { sanitizeBody } from '@ecommerce/shared/middleware';
 
 const router = Router();
+
+//CSRF token
+router.get('/csrf', asyncHandler(getCsrfToken));
 
 // Public routes
 router.post('/register', sanitizeBody, validate(registerSchema), asyncHandler(register));

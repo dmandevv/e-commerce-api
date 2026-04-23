@@ -71,6 +71,14 @@ const createToken = (id: string, role: string = 'customer') => {
   return jwt.sign({ id, role }, JWT_SECRET, { expiresIn: '1d' });
 };
 
+// ─── Helper: attach CSRF cookie + matching header ──────
+// The csrfProtection middleware (shared package) runs before routes,
+// so every mutating request (POST/PUT/PATCH/DELETE) needs both.
+const withCsrf = (req: request.Test, extraCookies: string[] = []): request.Test =>
+  req
+    .set('Cookie', ['csrfToken=test-csrf', ...extraCookies])
+    .set('X-CSRF-Token', 'test-csrf');
+
 // ─── Helper: fake user document ─────────────────────────
 // Simulates what Mongoose returns from User.findOne() or User.create().
 // Includes the comparePassword method that the login flow calls.
@@ -106,8 +114,8 @@ describe('POST /api/users/register', () => {
     // User.create returns our fake user
     mockUser.create.mockResolvedValue(fakeUser);
 
-    const res = await request(app)
-      .post('/api/users/register')
+    const res = await withCsrf(request(app)
+      .post('/api/users/register'))  
       .send({ name: 'Test User', email: 'test@example.com', password: 'password123' });
 
     // Verify the response
@@ -133,9 +141,9 @@ describe('POST /api/users/register', () => {
     // Existing user with this email
     mockUser.findOne.mockResolvedValue(fakeUser);
     
-    const res = await request(app)
+    const res = await withCsrf(request(app)
       .post('/api/users/register')
-      .send({ name: 'Test User', email: 'test@example.com', password: 'password123' });
+      .send({ name: 'Test User', email: 'test@example.com', password: 'password123' }));
 
     // Verify the response
     expect(res.status).toBe(409);
@@ -152,9 +160,9 @@ describe('POST /api/users/register', () => {
 
   // Test 3: Invalid body — missing required fields
   it("should not accept invalid data and reject with 400 error", async () => {   
-    const res = await request(app)
+    const res = await withCsrf(request(app)
       .post('/api/users/register')
-      .send({ });
+      .send({ }));
     // Verify the response
     expect(res.status).toBe(400);
     expect(res.body).toEqual({
@@ -178,9 +186,9 @@ describe('POST /api/users/login', () => {
     mockUser.findOne.mockReturnValue({ select: vi.fn().mockResolvedValue(fakeUser) });
     fakeUser.comparePassword.mockResolvedValue(true);
 
-    const res = await request(app)
+   const res = await withCsrf(request(app)
       .post('/api/users/login')
-      .send({ email: "test@example.com", password: "hashedpassword" });
+      .send({ email: "test@example.com", password: "hashedpassword" }));
 
     // Verify the response
     expect(res.status).toBe(200);
@@ -206,9 +214,9 @@ describe('POST /api/users/login', () => {
   it("should reject incorrect passwords and return status 401", async () => {
     mockUser.findOne.mockReturnValue({ select: vi.fn().mockResolvedValue(fakeUser) });
     fakeUser.comparePassword.mockResolvedValue(false);
-    const res = await request(app)
+    const res = await withCsrf(request(app)
       .post('/api/users/login')
-      .send({ email: "test@example.com", password: "wronghashedpassword" });
+      .send({ email: "test@example.com", password: "wronghashedpassword" }));
     // Verify the response
     expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
@@ -223,9 +231,9 @@ describe('POST /api/users/login', () => {
   // Test 3: Non-existent email (401)
   it("should reject non-existent emails and return 401", async () => {
     mockUser.findOne.mockReturnValue({ select: vi.fn().mockResolvedValue(null) });
-    const res = await request(app)
+    const res = await withCsrf(request(app)
       .post('/api/users/login')
-      .send({ email: "fake_email@example.com", password: "hashedpassword" });
+      .send({ email: "fake_email@example.com", password: "hashedpassword" }));
     // Check findOne was called with the email
     expect(mockUser.findOne).toHaveBeenCalledWith({ email: 'fake_email@example.com' });
     // Grab the select mock from what findOne returned, and check it was called with '+password'
@@ -239,9 +247,9 @@ describe('POST /api/users/login', () => {
   it("should increment failedLoginAttempts on failed login (wrong password)", async () => {
     mockUser.findOne.mockReturnValue({ select: vi.fn().mockResolvedValue(fakeUser) });
     fakeUser.comparePassword.mockResolvedValue(false);
-    const res = await request(app)
+    const res = await withCsrf(request(app)
       .post('/api/users/login')
-      .send({ email: "test@example.com", password: "wrongpassword" });
+      .send({ email: "test@example.com", password: "wrongpassword" }));
     
     expect(fakeUser.failedLoginAttempts).toBe(1);
     expect(fakeUser.lockedUntil).toBe(undefined);
@@ -251,9 +259,9 @@ describe('POST /api/users/login', () => {
     mockUser.findOne.mockReturnValue({ select: vi.fn().mockResolvedValue(fakeUser) });
     fakeUser.comparePassword.mockResolvedValue(false);
     fakeUser.failedLoginAttempts = 2;
-    const res = await request(app)
+    const res = await withCsrf(request(app)
       .post('/api/users/login')
-      .send({ email: "test@example.com", password: "wrongpassword" });
+      .send({ email: "test@example.com", password: "wrongpassword" }));
     
     expect(fakeUser.failedLoginAttempts).toBe(3);
     expect(fakeUser.lockedUntil).toBeInstanceOf(Date);
@@ -263,9 +271,9 @@ describe('POST /api/users/login', () => {
   it('should reject when account is locked', async () => {
     mockUser.findOne.mockReturnValue({ select: vi.fn().mockResolvedValue(fakeUser) });
     fakeUser.lockedUntil = new Date(Date.now() + 1_000_000);
-    const res = await request(app)
+    const res = await withCsrf(request(app)
       .post('/api/users/login')
-      .send({ email: "test@example.com", password: "hashedpassword" });
+      .send({ email: "test@example.com", password: "hashedpassword" }));
     
     expect(fakeUser.lockedUntil).toBeInstanceOf(Date);
     expect(fakeUser.lockedUntil!.getTime()).toBeGreaterThan(Date.now());
@@ -276,9 +284,9 @@ describe('POST /api/users/login', () => {
     fakeUser.comparePassword.mockResolvedValue(true);
     fakeUser.failedLoginAttempts = 3;
     fakeUser.lockedUntil = new Date(Date.now() - 1_000);
-    const res = await request(app)
+    const res = await withCsrf(request(app)
       .post('/api/users/login')
-      .send({ email: "test@example.com", password: "hashedpassword" });
+      .send({ email: "test@example.com", password: "hashedpassword" }));
     
     expect(fakeUser.failedLoginAttempts).toBe(0);
     expect(fakeUser.lockedUntil).toBeUndefined();
@@ -292,7 +300,7 @@ describe('POST /api/users/login', () => {
 describe('POST /api/users/refresh', () => {
 
   it("should return 401 when refresh token is missing", async () => {
-    const res = await request(app).post('/api/users/refresh');
+    const res = await withCsrf(request(app).post('/api/users/refresh'));
     expect(res.status).toBe(401);
     expect(res.body.message).toBe('No refresh token provided');
   });
@@ -301,9 +309,8 @@ describe('POST /api/users/refresh', () => {
     const { rotateRefreshToken } = await import('./lib/tokens.js');
     vi.mocked(rotateRefreshToken).mockResolvedValueOnce(null);
 
-    const res = await request(app)
-      .post('/api/users/refresh')
-      .set('Cookie', ['refreshToken=badToken']);
+    const res = await withCsrf(request(app)
+      .post('/api/users/refresh'), ['refreshToken=badToken']);
     
     expect(res.status).toBe(401);
     expect(res.body.message).toBe('Invalid or expired refresh token');
@@ -318,9 +325,8 @@ describe('POST /api/users/refresh', () => {
     vi.mocked(rotateRefreshToken).mockResolvedValueOnce({ userId: 'user123', newToken: 'token123' });
     mockUser.findById.mockResolvedValue(fakeUser);
 
-    const res = await request(app)
-      .post('/api/users/refresh')
-      .set('Cookie', ['refreshToken=old-valid-token']);
+    const res = await withCsrf(request(app)
+      .post('/api/users/refresh'), ['refreshToken=old-valid-token']);
     
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -335,9 +341,8 @@ describe('POST /api/users/refresh', () => {
     vi.mocked(rotateRefreshToken).mockResolvedValueOnce({ userId: 'deletedUserId', newToken: 'token123' });
     mockUser.findById.mockResolvedValue(null);
 
-    const res = await request(app)
-      .post('/api/users/refresh')
-      .set('Cookie', ['refreshToken=orphaned-token']);
+    const res = await withCsrf(request(app)
+      .post('/api/users/refresh'), ['refreshToken=orphaned-token']);
     
     expect(res.status).toBe(401);
     expect(res.body.message).toBe('User not found');
@@ -351,9 +356,8 @@ describe('POST /api/users/logout', () => {
   it("should revoke family and clear cookies when a refresh token is present", async () => {
     const { revokeFamily } = await import('./lib/tokens.js');
 
-    const res = await request(app)
-      .post('/api/users/logout')
-      .set('Cookie', ['refreshToken=some-valid-token']);
+    const res = await withCsrf(request(app)
+      .post('/api/users/logout'), ['refreshToken=some-valid-token']);
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -367,7 +371,8 @@ describe('POST /api/users/logout', () => {
   it("should succeed and clear cookies even when no refresh token is present", async () => {
     const { revokeFamily } = await import('./lib/tokens.js');
 
-    const res = await request(app).post('/api/users/logout');
+    const res = await withCsrf(request(app)
+      .post('/api/users/logout'));
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -435,5 +440,29 @@ describe('GET /api/users/internal/:id', () => {
       .get('/api/users/internal/fakeUserId')
     expect(res.status).toBe(404);
     expect(res.body.message).toBe("User not found");
+  });
+});
+
+// ─────────────────────────────────────────────────────────
+// GET /api/users/csrf (bootstrap endpoint — issues CSRF cookie)
+// ─────────────────────────────────────────────────────────
+describe('GET /api/users/csrf', () => {
+  it('should issue a csrfToken cookie and return 204', async () => {
+    const res = await request(app).get('/api/users/csrf');
+
+    expect(res.status).toBe(204);
+    expect(res.body).toEqual({});
+
+    // Cookie must be set so the frontend can read it
+    const cookies = res.headers['set-cookie'] as unknown as string[];
+    const csrfCookie = cookies.find((c) => c.startsWith('csrfToken='));
+    expect(csrfCookie).toBeDefined();
+
+    //httpOnly must be false so frontend JS can read via document.cookie
+    expect(csrfCookie).not.toMatch(/httpOnly/i);
+    //same site
+    expect(csrfCookie).toMatch(/sameSite=lax/i);
+    // Path=/ so it's sent with every same-origin request
+    expect(csrfCookie).toMatch(/Path=\//);
   });
 });
