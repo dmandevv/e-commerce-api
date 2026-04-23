@@ -134,7 +134,7 @@
 - [x] Sanitize all user-generated content (reviews, names) with DOMPurify or similar
 - [x] Implement account lockout after N failed login attempts
 - [x] Add security headers (Helmet.js): Content-Security-Policy, X-Frame-Options, etc.
-- [ ] Audit and rotate all secrets; use strong randomly generated JWT secrets
+- [x] Audit and rotate all secrets; use strong randomly generated JWT secrets — `validateJwtSecret` helper rejects weak/missing values at boot; all 6 services wired; dev secrets rotated; CI uses strong hex; docker-compose uses `${JWT_SECRET:?}` strict-fail; rotation playbook at `docs/JWT_ROTATION.md`
 - [ ] Set up proper CORS allowlists per environment (no wildcard `*` in production)
 
 #### 1.3 - Environment Separation

@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
+import { validateJwtSecret } from '@ecommerce/shared/middleware';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -37,7 +38,4 @@ export const config: Config = {
   lockoutDurationMinutes: parseInt(process.env.LOCKOUT_DURATION_MINUTES || '15', 10),
 };
 
-if (!config.jwtSecret) {
-  console.error('FATAL: JWT_SECRET is not defined');
-  process.exit(1);
-}
+validateJwtSecret(config.jwtSecret);
