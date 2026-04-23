@@ -1,14 +1,12 @@
 import { Request, Response } from 'express';
 import { User } from '../models/User.js';
 import { config } from '../config/index.js';
-import {
-  ConflictError,
-  UnauthorizedError,
-  NotFoundError,
-} from '@ecommerce/shared/errors';
-import type { ApiResponse, IUser } from '@ecommerce/shared/types';
+import { ConflictError, UnauthorizedError, NotFoundError } from '@ecommerce/shared/errors';
+import type { ApiResponse, IUser, JwtPayload } from '@ecommerce/shared/types';
 import { signAccessToken, issueRefreshToken, rotateRefreshToken, revokeFamily } from '../lib/tokens.js';
 import { issueCsrfToken } from '@ecommerce/shared/middleware';
+import jwt from 'jsonwebtoken';
+import { blacklist } from '../lib/blacklist.js';
 
 
 function setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
@@ -184,6 +182,7 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
 // ─── Logout ─────────────────────────────────────────────
 export const logout = async (req: Request, res: Response): Promise<void> => {
   const refreshToken = req.cookies?.refreshToken;
+  const accessToken = req.cookies?.accessToken;
 
   // Defense-in-depth. If a user logs out, we want every outstanding 
   // refresh token in their session chain dead — not just the current one. 
@@ -191,6 +190,22 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
   // sibling token alive, revoking the family guarantees cleanup.
   if (refreshToken) {
     await revokeFamily(refreshToken);
+  }
+
+  // 2. Blacklist the current access token (kills the current 15-min window)
+  // Verify so we don't blacklist a forged/expired token — they're harmless already.
+  if (accessToken) {
+    try {
+      const decoded = jwt.verify(accessToken, config.jwtSecret) as JwtPayload;
+      const ttl = decoded.exp - Math.floor(Date.now() / 1000); // JWT exp is a Unix timestamp in seconds. Date.now() is milliseconds.
+      if (ttl > 0 && decoded.jti) { //token isn't expired and isn't a legacy token without jti (defensive strategy)
+        await blacklist.blacklistToken(decoded.jti, ttl);
+      }
+    } catch (err) {
+      // Verify failure = token already invalid/expired -> nothing to revoke.
+      // Blacklist write failure = Redis down -> log loudly; cookies still clear.
+      console.error('[logout] Access-token revocation failed: ', err);
+    }
   }
 
   // Always clear cookies (safe even if they weren't set)

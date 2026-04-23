@@ -1,6 +1,6 @@
 # E-Commerce Platform Roadmap
 
-> **Last updated:** 2026-04-21
+> **Last updated:** 2026-04-23
 > **Goal:** Transform the current project into a production-grade e-commerce platform comparable to Amazon.ca, following industry-standard practices for security, reliability, and user experience.
 
 ---
@@ -65,7 +65,6 @@
 | **Hardcoded secrets in .env.local** | Security risk if leaked | Weak JWT secret, dev credentials in repo |
 | **No password reset flow** | Users locked out permanently | Only login/register exist |
 | **No email verification** | Fake accounts, spam | Registration has no verification step |
-| **No CSRF protection** | Vulnerable to cross-site request forgery | JWT in localStorage, no CSRF tokens |
 | **No input sanitization** | XSS risk on user-generated content (reviews) | Zod validates shape but doesn't sanitize HTML |
 | **No admin dashboard** | Admin operations require API tools | Backend admin routes exist but no UI |
 
@@ -128,10 +127,10 @@
 #### 1.2 - Authentication & Security
 - [x] Implement refresh token rotation (short-lived access token + long-lived refresh token in httpOnly cookie) — family-based rotation with reuse detection, MongoDB-backed opaque refresh tokens
 - [x] Move JWT from localStorage to httpOnly secure cookies (prevent XSS token theft) — access cookie (Path=/, 15m) + refresh cookie (Path=/api/users, 7d); silent refresh on 401 in frontend
-- [ ] Add token revocation (Redis blacklist or versioned tokens) — refresh family revocation done on logout; access-token blacklist still pending
+- [x] Add token revocation (Redis blacklist or versioned tokens) — access-token `jti` blacklist in Redis with TTL = remaining token life; shared `createAuthenticate` factory + per-service Redis client; fail-open on reads, fail-closed on writes
 - [ ] Implement email verification on registration (send verification link, activate account)
 - [ ] Implement password reset flow (forgot password -> email link -> reset form)
-- [ ] Add CSRF protection middleware
+- [x] Add CSRF protection middleware — stateless double-submit cookie pattern; `csrfProtection` + `issueCsrfToken` in shared; mounted on all services; frontend `apiFetch` auto-attaches `X-CSRF-Token`
 - [x] Sanitize all user-generated content (reviews, names) with DOMPurify or similar
 - [x] Implement account lockout after N failed login attempts
 - [x] Add security headers (Helmet.js): Content-Security-Policy, X-Frame-Options, etc.

@@ -24,6 +24,7 @@
     "nodemailer": "8.0.5",
     "pg": "^8.16.0",
     "prisma": "^7.0.0",
+    "redis": "^5.11.0",
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {

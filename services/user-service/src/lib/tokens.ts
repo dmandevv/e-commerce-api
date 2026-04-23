@@ -8,9 +8,11 @@ import { config } from '../config/index.js';
 // Short-lived JWT. Contains user id + role (claims).
 // Used by services to identify the user on each request.
 export function signAccessToken(userId: string, role: string): string {
-  return jwt.sign({ id: userId, role }, config.jwtSecret, {
-    expiresIn: config.accessTokenExpiresIn as StringValue,
-  });
+  return jwt.sign(
+    { id: userId, role, jti: randomUUID() }, 
+    config.jwtSecret,
+    { expiresIn: config.accessTokenExpiresIn as StringValue }
+  );
 }
 
 // ─── Refresh Token ──────────────────────────────────────

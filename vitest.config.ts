@@ -33,6 +33,7 @@ export default defineConfig({
         "**/*.d.ts",       // type declaration files
         "**/models/**",    // Mongoose model definitions (schema setup)
         "**/lib/prisma.ts", // database client bootstrap
+        "**/lib/blacklist.ts", // Redis client bootstrap per service
         "**/socket/**",    // WebSocket setup
         "**/events/index.ts", // shared event constants
         "**/types/**",     // type definitions

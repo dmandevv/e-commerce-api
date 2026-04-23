@@ -2,6 +2,7 @@
 export interface JwtPayload {
   id: string;
   role: 'customer' | 'admin';
+  jti: string; //unique JWT id - used for revocation
   iat: number;
   exp: number;
 }

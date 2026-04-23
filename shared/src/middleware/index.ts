@@ -2,6 +2,10 @@ import { randomBytes, randomUUID, timingSafeEqual } from 'crypto';
 import type { Request, Response, NextFunction } from 'express';
 import { ZodType, ZodError } from 'zod';
 import sanitizeHtml from 'sanitize-html';
+import type { JwtPayload } from '../types/index.js';
+
+export * from './blacklist.js';
+export * from './auth.js';
 
 // Declared here because the shared package compiles independently
 // from the services. It doesn't see their express.d.ts augmentations,
@@ -10,6 +14,7 @@ declare global {
   namespace Express {
     interface Request {
       requestId?: string;
+      user?: JwtPayload;
     }
   }
 }

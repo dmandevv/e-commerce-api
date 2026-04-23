@@ -20,7 +20,8 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.3.0",
     "swagger-ui-express": "^5.0.1",
-    "validator": "^13.15.26"
+    "validator": "^13.15.26",
+    "redis": "^5.11.0"
   },
   "devDependencies": {
     "@types/amqplib": "^0.10.6",

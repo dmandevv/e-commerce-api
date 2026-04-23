@@ -31,6 +31,14 @@ vi.mock('./config/index.js', () => ({
 // ─── Mock swagger ───────────────────────────────────────
 vi.mock('./swagger.js', () => ({ default: {} }));
 
+// ─── Mock blacklist (no real Redis connection) ──────────
+vi.mock('./lib/blacklist.js', () => ({
+  blacklist: {
+    isBlacklisted: vi.fn().mockResolvedValue(false),
+    blacklistToken: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 // ─── Import app AFTER mocks ────────────────────────────
 import { app } from './app.js';
 import { NotFoundError } from '@ecommerce/shared';

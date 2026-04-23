@@ -16,6 +16,7 @@ interface Config {
   cookieSecure: boolean;             // HTTPS-only in prod
   cookieDomain: string;              // for cross-subdomain if needed
   rabbitmqUrl: string;
+  redisUrl: string;
   clientUrl: string;
   maxLoginAttempts: number;
   lockoutDurationMinutes: number;
@@ -28,7 +29,9 @@ export const config: Config = {
   accessTokenExpiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || '15m',
   refreshTokenExpiresInDays: parseInt(process.env.REFRESH_TOKEN_EXPIRES_DAYS || '7', 10),
   cookieSecure: process.env.NODE_ENV === 'production',
-  cookieDomain: process.env.COOKIE_DOMAIN || '',  rabbitmqUrl: process.env.RABBITMQ_URL || 'amqp://admin:admin_password@localhost:5672',
+  cookieDomain: process.env.COOKIE_DOMAIN || '',
+  rabbitmqUrl: process.env.RABBITMQ_URL || 'amqp://admin:admin_password@localhost:5672',
+  redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
   maxLoginAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS || '5', 10),
   lockoutDurationMinutes: parseInt(process.env.LOCKOUT_DURATION_MINUTES || '15', 10),

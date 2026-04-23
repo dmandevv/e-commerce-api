@@ -55,6 +55,20 @@ vi.mock('./config/index.js', () => ({
 // ─── Mock swagger (avoid loading the real spec) ─────────
 vi.mock('./swagger.js', () => ({ default: {} }));
 
+// ─── Mock blacklist (no real Redis connection) ──────────
+// Auth middleware checks the blacklist on every request. We return `false`
+// so all tokens pass the revocation gate; individual tests that want to
+// exercise the revoked-token path override this per call.
+// Hoisted so tests can reference mockBlacklist.blacklistToken directly.
+const mockBlacklist = vi.hoisted(() => ({
+  isBlacklisted: vi.fn().mockResolvedValue(false),
+  blacklistToken: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('./lib/blacklist.js', () => ({
+  blacklist: mockBlacklist,
+}));
+
 // ─── Import app AFTER mocks are set up ──────────────────
 // This is why we use vi.mock() — it hoists above imports automatically.
 // The app gets our mocked User model and config, not the real ones.
@@ -382,6 +396,54 @@ describe('POST /api/users/logout', () => {
     const cookies = res.headers['set-cookie'] as unknown as string[];
     expect(cookies.some((c) => c.startsWith('accessToken=') && c.includes('Expires='))).toBe(true);
     expect(cookies.some((c) => c.startsWith('refreshToken=') && c.includes('Expires='))).toBe(true);
+  });
+
+  it("should blacklist the access token jti when a valid accessToken is present", async () => {
+    // Sign a real JWT with a known jti so we can assert blacklistToken receives it.
+    const validToken = jwt.sign(
+      { id: 'u1', role: 'customer', jti: 'jti-to-revoke' },
+      JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    const res = await withCsrf(
+      request(app).post('/api/users/logout'),
+      [`accessToken=${validToken}`]
+    );
+
+    expect(res.status).toBe(200);
+    // The jti from the cookie should have been passed to blacklistToken,
+    // with a positive TTL (remaining token lifetime in seconds).
+    expect(mockBlacklist.blacklistToken).toHaveBeenCalledWith(
+      'jti-to-revoke',
+      expect.any(Number),
+    );
+    const [, ttl] = mockBlacklist.blacklistToken.mock.calls[0];
+    expect(ttl).toBeGreaterThan(0);
+    expect(ttl).toBeLessThanOrEqual(900); // 15m max
+  });
+
+  it("should still clear cookies when blacklist write fails (Redis down)", async () => {
+    // Simulate Redis being unreachable.
+    mockBlacklist.blacklistToken.mockRejectedValueOnce(new Error('ECONNREFUSED'));
+
+    const validToken = jwt.sign(
+      { id: 'u1', role: 'customer', jti: 'jti-x' },
+      JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    const res = await withCsrf(
+      request(app).post('/api/users/logout'),
+      [`accessToken=${validToken}`]
+    );
+
+    // Logout still succeeds — cookie UX shouldn't break over a Redis blip.
+    // The blacklist write failure is logged but swallowed so the user still
+    // sees "logged out" in the UI.
+    expect(res.status).toBe(200);
+    const cookies = res.headers['set-cookie'] as unknown as string[];
+    expect(cookies.some((c) => c.startsWith('accessToken=') && c.includes('Expires='))).toBe(true);
   });
 });
 
