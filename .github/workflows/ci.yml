@@ -82,7 +82,7 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:coverage
         env:
-          JWT_SECRET: ci_test_secret
+          JWT_SECRET: b653704716e555b5849ace3716d24ca1deb45aa06976bf3989d9974d63147a0f
 
   # ─── Job 3: Docker Build Verification ──────────────────
   # WHY: Ensures every service's Dockerfile builds successfully.
@@ -143,7 +143,7 @@ jobs:
       - name: Start services
         run: docker compose up -d --build --wait --wait-timeout 120
         env:
-          JWT_SECRET: ci_test_secret
+          JWT_SECRET: b653704716e555b5849ace3716d24ca1deb45aa06976bf3989d9974d63147a0f
           STRIPE_SECRET_KEY: sk_test_placeholder
           STRIPE_WEBHOOK_SECRET: ""
 

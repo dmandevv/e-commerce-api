@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
+import { validateJwtSecret } from '@ecommerce/shared/middleware';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -32,3 +33,5 @@ export const config: Config = {
         apiSecret: process.env.CLOUDINARY_API_SECRET || '',
     },
 };
+
+validateJwtSecret(config.jwtSecret);
