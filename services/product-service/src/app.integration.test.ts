@@ -87,6 +87,13 @@ const JWT_SECRET = 'test-secret-key';
 const createToken = (id: string, role: string = 'customer') =>
   jwt.sign({ id, role }, JWT_SECRET, { expiresIn: '1d' });
 
+// Attach CSRF cookie + matching header for mutating requests.
+// csrfProtection runs before routes, so every POST/PATCH/DELETE needs both.
+const withCsrf = (req: request.Test, extraCookies: string[] = []): request.Test =>
+  req
+    .set('Cookie', ['csrfToken=test-csrf', ...extraCookies])
+    .set('X-CSRF-Token', 'test-csrf');
+
 const adminToken = createToken('admin1', 'admin');
 const customerToken = createToken('user1', 'customer');
 
@@ -213,8 +220,7 @@ describe('POST /api/products', () => {
   // admin creates product (201)
   it("should return 201 and the product created", async () => {
     mockProduct.create.mockResolvedValue({ ...fakeProduct, ...newProduct });
-    const res = await request(app)
-      .post('/api/products')
+    const res = await withCsrf(request(app).post('/api/products'))
       .set('Authorization', `Bearer ${adminToken}`)
       .send(newProduct)
     expect(mockCache.cacheDelPattern).toHaveBeenCalledWith('list:*');
@@ -224,8 +230,7 @@ describe('POST /api/products', () => {
 
   // customer cannot create product (403)
   it("should return 403 when customer tries to create product", async () => {
-    const res = await request(app)
-      .post('/api/products')
+    const res = await withCsrf(request(app).post('/api/products'))
       .set('Authorization', `Bearer ${customerToken}`)
       .send({ })
     expect(res.status).toBe(403);
@@ -234,8 +239,7 @@ describe('POST /api/products', () => {
 
   // no token (401)
   it("should return 401 when token is missing", async () => {
-    const res = await request(app)
-      .post('/api/products')
+    const res = await withCsrf(request(app).post('/api/products'))
       .send({ })
     expect(res.status).toBe(401);
     expect(res.body.message).toBe('Login first to access this resource')
@@ -249,8 +253,7 @@ describe('PATCH /api/products/:id', () => {
   // admin updates product (200)
   it("should return 200 and the updated product", async () => {
     mockProduct.findByIdAndUpdate.mockResolvedValue({ ...fakeProduct, price: 0.01 })
-    const res = await request(app)
-      .patch('/api/products/prod1')
+    const res = await withCsrf(request(app).patch('/api/products/prod1'))
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ price: 0.01 })
     expect(mockCache.cacheDel).toHaveBeenCalledWith(`item:prod1`);
@@ -263,8 +266,7 @@ describe('PATCH /api/products/:id', () => {
   // product not found (404)
   it("should return 404 when product not found", async () => {
     mockProduct.findByIdAndUpdate.mockResolvedValue(null)
-    const res = await request(app)
-      .patch('/api/products/fakeProdId')
+    const res = await withCsrf(request(app).patch('/api/products/fakeProdId'))
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ })
     expect(res.status).toBe(404);
@@ -279,8 +281,7 @@ describe('DELETE /api/products/:id', () => {
   // admin deletes product (200)
   it("should return 200 when product is deleted", async () => {
     mockProduct.findById.mockResolvedValue(fakeProduct);
-    const res = await request(app)
-      .del('/api/products/prod1')
+    const res = await withCsrf(request(app).del('/api/products/prod1'))
       .set('Authorization', `Bearer ${adminToken}`)
     expect(fakeProduct.deleteOne).toHaveBeenCalled();
     expect(mockCache.cacheDel).toHaveBeenCalledWith(`item:prod1`);
@@ -292,8 +293,7 @@ describe('DELETE /api/products/:id', () => {
   // product not found (404)
   it("should return 404 when product not found", async () => {
     mockProduct.findById.mockResolvedValue(null);
-    const res = await request(app)
-      .del('/api/products/fakeProdId')
+    const res = await withCsrf(request(app).del('/api/products/fakeProdId'))
       .set('Authorization', `Bearer ${adminToken}`)
     expect(res.status).toBe(404);
     expect(res.body.message).toEqual('Product not found');
@@ -307,8 +307,7 @@ describe('POST /api/products/reviews', () => {
   // customer creates review (200)
   it("should return 200 when review is created by customer", async () => {
   mockProduct.findById.mockResolvedValue({ ...fakeProduct, reviews: [], save: vi.fn() });
-    const res = await request(app)
-      .post('/api/products/reviews')
+    const res = await withCsrf(request(app).post('/api/products/reviews'))
       .set('Authorization', `Bearer ${customerToken}`)
       .send({ rating: 5, comment: 'It sucks', productId: 'prod1' })
     expect(mockCache.cacheDel).toHaveBeenCalledWith('item:prod1');
@@ -319,8 +318,7 @@ describe('POST /api/products/reviews', () => {
   });
   // no token (401)
   it("should return 401 when token is missing", async () => {
-    const res = await request(app)
-      .post('/api/products/reviews')
+    const res = await withCsrf(request(app).post('/api/products/reviews'))
     expect(res.status).toBe(401);
     expect(res.body.message).toBe('Login first to access this resource');
   });

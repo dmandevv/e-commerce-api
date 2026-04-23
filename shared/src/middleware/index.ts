@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { randomBytes, randomUUID, timingSafeEqual } from 'crypto';
 import type { Request, Response, NextFunction } from 'express';
 import { ZodType, ZodError } from 'zod';
 import sanitizeHtml from 'sanitize-html';
@@ -84,5 +84,44 @@ export function sanitizeBody(req: Request, _res: Response, next: NextFunction): 
   if (req.body && typeof req.body === 'object') {
     req.body = sanitizeValue(req.body);
   }
+  next();
+}
+
+export function issueCsrfToken(res: Response, options: { secure: boolean }): string {
+  const token = randomBytes(32).toString('hex');
+  res.cookie('csrfToken', token, { 
+    httpOnly: false,
+    secure: options.secure,
+    sameSite: 'lax',
+    maxAge: 2 * 60 * 60 * 1000, //2 hours
+    path: '/',
+  });
+  return token;
+}
+
+export function csrfProtection(req: Request, res: Response, next: NextFunction): void {
+  // 1. Safe methods skip entirely — they should have no side effects
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    return next();
+  }
+
+  // 2. Pull the expected value from req.cookies.csrfToken
+  const expectedToken = req.cookies?.csrfToken as string | undefined;
+
+  // 3. Pull the submitted value from req.headers['x-csrf-token']
+  const submittedToken = req.headers['x-csrf-token'] as string | undefined;
+
+  // 4. Any missing → 403
+  if (!expectedToken || !submittedToken || expectedToken.length !== submittedToken.length) {
+    res.status(403).json({ success: false, message: 'CSRF validation failed' });
+    return;
+  }
+
+  // 5. Constant-time comparison
+  if (!timingSafeEqual(Buffer.from(expectedToken), Buffer.from(submittedToken))) {
+    res.status(403).json({ success: false, message: 'CSRF validation failed' });
+    return;
+  }
+
   next();
 }
