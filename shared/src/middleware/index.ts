@@ -7,6 +7,8 @@ import type { JwtPayload } from '../types/index.js';
 export * from './blacklist.js';
 export * from './auth.js';
 export * from './validateSecret.js';
+export * from './tokenHash.js';
+
 
 // Declared here because the shared package compiles independently
 // from the services. It doesn't see their express.d.ts augmentations,

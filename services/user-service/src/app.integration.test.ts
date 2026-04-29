@@ -15,6 +15,7 @@ const mockUser = vi.hoisted(() => ({
   findOne: vi.fn(),   // Used by login (find by email) and register (check duplicate)
   findById: vi.fn(),  // Used by getProfile and getUserById
   create: vi.fn(),    // Used by register (create new user)
+  findByIdAndUpdate: vi.fn(),
 }));
 
 // ─── Mock the User model ────────────────────────────────
@@ -23,6 +24,14 @@ const mockUser = vi.hoisted(() => ({
 vi.mock('./models/User.js', () => ({
   User: mockUser,
 }));
+
+// ─── Mock the Refresh token model ────────────────────────────────
+vi.mock('./models/RefreshToken.js', () => ({
+  RefreshToken: {
+    updateMany: vi.fn(),
+  },
+}));
+
 
 // ─── Mock Tokens ────────────────────────────────
 // Refresh tokens are stored in mongoDB
@@ -33,6 +42,13 @@ vi.mock('./lib/tokens.js', () => ({
   revokeFamily: vi.fn(),
 }));
 
+// ─── Mock verificationToken helpers ─────────────────────
+// createVerificationToken returns the raw token (used in email link).
+// consumeVerificationToken returns userId on success, null on bad token.
+vi.mock('./lib/verificationToken.js', () => ({
+  createVerificationToken: vi.fn(async () => 'fake-raw-token'),
+  consumeVerificationToken: vi.fn(),
+}));
 
 // ─── Mock config ────────────────────────────────────────
 // Provide a known JWT secret so we can create valid tokens in tests.
@@ -73,8 +89,11 @@ vi.mock('./lib/blacklist.js', () => ({
 // This is why we use vi.mock() — it hoists above imports automatically.
 // The app gets our mocked User model and config, not the real ones.
 import { app } from './app.js';
-import { mock } from 'node:test';
-import { email } from 'zod';
+import { consumeVerificationToken, createVerificationToken } from './lib/verificationToken.js';
+import { requestVerificationEmail, verifyEmail } from './controllers/userController.js';
+import { ValidationError } from '@ecommerce/shared';
+import { create } from 'node:domain';
+import { RefreshToken } from './models/RefreshToken.js';
 
 // ─── Test JWT secret (must match the mock config above) ─
 const JWT_SECRET = 'test-secret-key';
@@ -106,6 +125,7 @@ const fakeUser = {
   updatedAt: new Date('2026-01-01'),
   failedLoginAttempts: 0,
   lockedUntil: undefined as Date | undefined,
+  emailVerified: true,
   comparePassword: vi.fn(),
   save: vi.fn(),
 };
@@ -115,6 +135,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   fakeUser.failedLoginAttempts = 0;
   fakeUser.lockedUntil = undefined;
+  fakeUser.emailVerified = true;
 });
 
 // ─────────────────────────────────────────────────────────
@@ -526,5 +547,154 @@ describe('GET /api/users/csrf', () => {
     expect(csrfCookie).toMatch(/sameSite=lax/i);
     // Path=/ so it's sent with every same-origin request
     expect(csrfCookie).toMatch(/Path=\//);
+  });
+});
+
+// ─────────────────────────────────────────────────────────
+// GET /api/users/verify-email/:token
+// ─────────────────────────────────────────────────────────
+describe('GET /api/users/verify-email/:token', () => {
+  it('should verify email and return 200 if token is valid', async () => {
+    vi.mocked(consumeVerificationToken).mockResolvedValueOnce('user123');
+    const res = await request(app)
+      .get('/api/users/verify-email/valid-raw-token');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(mockUser.findByIdAndUpdate).toHaveBeenCalled();
+  });
+  it('should return 400 when token is invalid or expired', async () => {
+    vi.mocked(consumeVerificationToken).mockResolvedValueOnce(null);
+    const res = await request(app)
+      .get('/api/users/verify-email/invalid-token');
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Invalid or expired verification link');
+  });
+});
+
+// ─────────────────────────────────────────────────────────
+// POST /api/users/verify-email/request
+// ─────────────────────────────────────────────────────────
+describe('POST /api/users/verify-email/request', () => {
+  it('should send verification email and return 204', async () => {
+    fakeUser.emailVerified = false;
+    mockUser.findById.mockResolvedValue(fakeUser);
+    const token = createToken('user123');
+
+    const res = await withCsrf(
+      request(app)
+        .post('/api/users/verify-email/request'),
+      [`accessToken=${token}`]
+    );
+
+    expect(res.status).toBe(204);
+    expect(createVerificationToken).toHaveBeenCalledWith('user123', 'email-verification');
+  });
+  it('should return 401 when user is not authenticated', async () => {
+    const res = await withCsrf(
+      request(app).post('/api/users/verify-email/request')
+    );
+
+    expect(res.status).toBe(401);
+  });
+  it('should return 404 when user does not exist', async () => {
+    mockUser.findById.mockResolvedValue(null);
+    const token = createToken('fake-user');
+
+    const res = await withCsrf(
+      request(app).post('/api/users/verify-email/request'),
+      [`accessToken=${token}`]
+    );
+
+    expect(res.status).toBe(404);
+    expect(createVerificationToken).not.toHaveBeenCalledWith();
+  });
+  it('should return 409 when user is already verified', async () => {
+    mockUser.findById.mockResolvedValue(fakeUser);
+    const token = createToken('user123');
+
+    const res = await withCsrf(
+      request(app).post('/api/users/verify-email/request'),
+      [`accessToken=${token}`]
+    );
+
+    expect(res.status).toBe(409);
+    expect(createVerificationToken).not.toHaveBeenCalledWith('user123', 'email-verification');
+  }); 
+});
+
+
+// ─────────────────────────────────────────────────────────
+// POST /api/users/forgot-password
+// ─────────────────────────────────────────────────────────
+describe('POST /api/users/forgot-password', () => {
+  it('should create a reset token and return 200 if user with email exists', async () => {
+    mockUser.findOne.mockResolvedValue(fakeUser);
+    const token = createToken('user123');
+    const res = await withCsrf(
+      request(app)
+        .post('/api/users/forgot-password')
+        .send({ email: 'test@example.com' }),
+      [`accessToken=${token}`]
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('If an account with that email exists, a password reset link has been sent.');
+    expect(createVerificationToken).toHaveBeenCalledWith('user123', 'password-reset');
+  });
+  it('should return 200 even if user with email does NOT exist', async () => {
+    mockUser.findOne.mockResolvedValue(null);
+    const token = createToken('unregisteredUser');
+    const res = await withCsrf(
+      request(app)
+        .post('/api/users/forgot-password')
+        .send({ email: 'unregistered@example.com' }),
+      [`accessToken=${token}`]
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('If an account with that email exists, a password reset link has been sent.');
+    expect(createVerificationToken).not.toHaveBeenCalledWith();
+  });
+});
+
+// ─────────────────────────────────────────────────────────
+// POST /api/users/reset-password/:token
+// ─────────────────────────────────────────────────────────
+describe('POST /api/users/reset-password/:token', () => {
+  it('should reset password and revoke all sessions when token is valid', async () => {
+    vi.mocked(consumeVerificationToken).mockResolvedValueOnce('user123');
+    mockUser.findById.mockResolvedValueOnce(fakeUser);
+    const res = await withCsrf(
+      request(app)
+        .post('/api/users/reset-password/valid-token')
+        .send({ password: 'new-password' })
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Password reset successfully. Please log in with your new password.');
+    expect(fakeUser.save).toHaveBeenCalled();
+    expect(vi.mocked(RefreshToken.updateMany)).toHaveBeenCalled();
+  });
+  it('should return 400 if token is invalid or link has expired', async () => {
+    vi.mocked(consumeVerificationToken).mockResolvedValueOnce(null);
+    const res = await withCsrf(
+      request(app)
+        .post('/api/users/reset-password/invalid-token')
+        .send({ password: 'new-password' })
+    );
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Invalid or expired reset link');
+    expect(fakeUser.save).not.toHaveBeenCalled();
+    expect(vi.mocked(RefreshToken.updateMany)).not.toHaveBeenCalled();
+  });
+  it('should return 404 if user not found after consuming token', async () => {
+    vi.mocked(consumeVerificationToken).mockResolvedValueOnce('deletedUserId');
+    mockUser.findById.mockResolvedValueOnce(null)
+    const res = await withCsrf(
+      request(app)
+        .post('/api/users/reset-password/valid-token')
+        .send({ password: 'new-password' })
+    );
+    expect(res.status).toBe(404);
+    expect(res.body.message).toBe('User not found');
+    expect(fakeUser.save).not.toHaveBeenCalled();
+    expect(vi.mocked(RefreshToken.updateMany)).not.toHaveBeenCalled();
   });
 });
