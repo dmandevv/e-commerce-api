@@ -1,12 +1,14 @@
 import { Request, Response } from 'express';
 import { User } from '../models/User.js';
+import { RefreshToken } from '../models/RefreshToken.js';
 import { config } from '../config/index.js';
-import { ConflictError, UnauthorizedError, NotFoundError } from '@ecommerce/shared/errors';
+import { ConflictError, UnauthorizedError, NotFoundError, ValidationError, ForbiddenError } from '@ecommerce/shared/errors';
 import type { ApiResponse, IUser, JwtPayload } from '@ecommerce/shared/types';
 import { signAccessToken, issueRefreshToken, rotateRefreshToken, revokeFamily } from '../lib/tokens.js';
 import { issueCsrfToken } from '@ecommerce/shared/middleware';
 import jwt from 'jsonwebtoken';
 import { blacklist } from '../lib/blacklist.js';
+import { createVerificationToken, consumeVerificationToken } from '../lib/verificationToken.js';
 
 
 function setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
@@ -43,6 +45,17 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
   const user = await User.create({ name, email, password, role: 'customer' });
   
+  // Create email verification token. The raw value goes to notification-service
+  // via RabbitMQ event. User can't log in until they consume it.
+  const verificationToken = await createVerificationToken(
+    user._id.toString(),
+    'email-verification'
+  );
+
+  // TODO: publish USER_REGISTERED event with verificationToken
+  // For now, log to console so we can grab the link during dev testing.
+  console.log(`[DEV] Verification link: http://localhost:3000/verify-email/${verificationToken}`);
+
   const accessToken = signAccessToken(user._id.toString(), user.role);
   const refreshToken = await issueRefreshToken(user._id.toString());
   setAuthCookies(res, accessToken, refreshToken);
@@ -89,6 +102,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
     await user.save();
     throw new UnauthorizedError('Invalid credentials');
+  }
+  
+  // block unverified users (after password is confirmed correct)
+  if (!user.emailVerified) {
+    throw new ForbiddenError('Please verify your email before logging in');
   }
 
   //successful login - reset login attempts
@@ -220,3 +238,109 @@ export const getCsrfToken = async (_req: Request, res: Response): Promise<void> 
   issueCsrfToken(res, { secure: config.cookieSecure });
   res.status(204).end();
 }
+
+
+// ─── Verify Email ───────────────────────────────────────
+// PUBLIC endpoint — clicked from email link. Consumes the token atomically
+// and flips emailVerified to true.
+export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
+  const { token } = req.params;
+
+  if (!token) {
+    throw new ValidationError('Token is required');
+  }
+
+  const userId = await consumeVerificationToken(token as string, 'email-verification');
+  if (!userId) {
+    throw new ValidationError('Invalid or expired verification link');
+  }
+
+  await User.findByIdAndUpdate(userId, { emailVerified: true });
+
+  res.status(200).json({ success: true, message: 'Email verified' });
+};
+
+
+// ─── Request Verification Email (resend) ────────────────
+// AUTH-required endpoint. User clicks "didn't get it? resend" button.
+export const requestVerificationEmail = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const userId = req.user!.id;
+
+  const user = await User.findById(userId);
+  if (!user) throw new NotFoundError('User not found');
+  if (user.emailVerified) {
+    // Don't waste an email. Tell the client.
+    throw new ConflictError('Email already verified');
+  }
+
+  const verificationToken = await createVerificationToken(
+    userId,
+    'email-verification'
+  );
+
+  // TODO (Step 7): publish USER_REGISTERED event with verificationToken
+  console.log(`[DEV] Resent verification link: http://localhost:3000/verify-email/${verificationToken}`);
+
+  res.status(204).send();
+};
+
+// ─── Forgot Password (request reset link) ──────────────
+// PUBLIC endpoint. Always returns 200, even if the email doesn't exist —
+// this prevents attackers from probing which emails are registered.
+export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+  if (user) {
+    // Only create + send if the user exists. The response shape is
+    // identical either way so the client can't tell the difference.
+    const resetToken = await createVerificationToken(
+      user._id.toString(),
+      'password-reset'
+    );
+
+    // TODO (Step 7): publish PASSWORD_RESET_REQUESTED event with resetToken
+    console.log(`[DEV] Password reset link: http://localhost:3000/reset-password/${resetToken}`);
+  }
+
+  // Same response whether or not the user exists
+  res.status(200).json({
+    success: true,
+    message: 'If an account with that email exists, a password reset link has been sent.',
+  });
+};
+
+// ─── Reset Password (consume reset token) ──────────────
+// PUBLIC endpoint. Consumes the token, updates the password, and
+// invalidates ALL of this user's existing sessions for safety.
+export const resetPassword = async (req: Request, res: Response): Promise<void> => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  if (!token) throw new ValidationError('Token is required');
+
+  const userId = await consumeVerificationToken(token as string, 'password-reset');
+  if (!userId) {
+    throw new ValidationError('Invalid or expired reset link');
+  }
+
+  const user = await User.findById(userId);
+  if (!user) throw new NotFoundError('User');
+
+  // Update password — pre('save') middleware on User auto-hashes it via bcrypt.
+  user.password = password;
+  await user.save();
+
+  // Security: invalidate ALL existing sessions on password change.
+  // This forces re-login from every device — including any attacker who
+  // had stolen credentials before this reset.
+  await RefreshToken.updateMany({ userId }, { revoked: true });
+
+  res.status(200).json({
+    success: true,
+    message: 'Password reset successfully. Please log in with your new password.',
+  });
+};
