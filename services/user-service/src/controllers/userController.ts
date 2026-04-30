@@ -9,6 +9,10 @@ import { issueCsrfToken } from '@ecommerce/shared/middleware';
 import jwt from 'jsonwebtoken';
 import { blacklist } from '../lib/blacklist.js';
 import { createVerificationToken, consumeVerificationToken } from '../lib/verificationToken.js';
+import { publishEvent } from '../events/publisher.js';
+import { EventNames } from '@ecommerce/shared/events';
+import type { PasswordResetRequestedEvent, UserRegisteredEvent } from '@ecommerce/shared/events';
+import { timeStamp } from 'node:console';
 
 
 function setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
@@ -52,15 +56,18 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     'email-verification'
   );
 
-  // TODO: publish USER_REGISTERED event with verificationToken
-  // For now, log to console so we can grab the link during dev testing.
-  console.log(`[DEV] Verification link: http://localhost:3000/verify-email/${verificationToken}`);
+  // publish USER_REGISTERED event with verificationToken
+  await publishEvent(EventNames.USER_REGISTERED, {
+    userId: user._id.toString(),
+    email: user.email,
+    name: user.name,
+    verificationToken: verificationToken,
+    timestamp: new Date(),
+  } satisfies UserRegisteredEvent);
 
   const accessToken = signAccessToken(user._id.toString(), user.role);
   const refreshToken = await issueRefreshToken(user._id.toString());
   setAuthCookies(res, accessToken, refreshToken);
-
-  // TODO: publish USER_REGISTERED event to RabbitMQ (Step 5)
 
   const response: ApiResponse<{ user: Partial<IUser> }> = {
     success: true,
@@ -302,8 +309,12 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
       'password-reset'
     );
 
-    // TODO (Step 7): publish PASSWORD_RESET_REQUESTED event with resetToken
-    console.log(`[DEV] Password reset link: http://localhost:3000/reset-password/${resetToken}`);
+    await publishEvent(EventNames.PASSWORD_RESET_REQUESTED, {
+      userId: user._id.toString(),
+      email: user.email,
+      resetToken: resetToken,
+      timestamp: new Date(),
+    } satisfies PasswordResetRequestedEvent);
   }
 
   // Same response whether or not the user exists

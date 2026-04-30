@@ -10,6 +10,7 @@ import type {
   PaymentCompletedEvent,
   PaymentFailedEvent,
   OrderStatusUpdatedEvent,
+  PasswordResetRequestedEvent,
 } from '@ecommerce/shared/events';
 
 const userBreaker = new CircuitBreaker({ name: 'user-service' });
@@ -71,6 +72,8 @@ export async function startConsumer(io: SocketServer): Promise<void> {
   await channel.bindQueue(QUEUE, EXCHANGE, 'payment.completed');
   await channel.bindQueue(QUEUE, EXCHANGE, 'payment.failed');
   await channel.bindQueue(QUEUE, EXCHANGE, 'order.status_updated');
+  await channel.bindQueue(QUEUE, EXCHANGE, 'password.reset_requested');
+
 
   await channel.prefetch(1);
 
@@ -86,9 +89,17 @@ export async function startConsumer(io: SocketServer): Promise<void> {
       switch (routingKey) {
         case 'user.registered': {
           const event = data as UserRegisteredEvent;
-          const { subject, html } = templates.welcomeEmail(event.name);
+          const { subject, html } = templates.verifyEmail(event.name, event.verificationToken);
           await sendEmail(event.email, subject, html);
-          console.log(`Welcome email sent to ${event.email}`);
+          console.log(`Verification email sent to ${event.email}`);
+          break;
+        }
+
+        case 'password.reset_requested': {
+          const event = data as PasswordResetRequestedEvent;
+          const { subject, html } = templates.passwordReset(event.resetToken);
+          await sendEmail(event.email, subject, html);
+          console.log(`Password reset email sent to ${event.email}`);
           break;
         }
 

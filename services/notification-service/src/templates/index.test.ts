@@ -1,11 +1,20 @@
 import { describe, it, expect } from "vitest";
-import { welcomeEmail, orderConfirmation, paymentReceipt, paymentFailed, orderStatusUpdate } from "./index.js";
+import { verifyEmail, passwordReset, orderConfirmation, paymentReceipt, paymentFailed, orderStatusUpdate } from "./index.js";
 
-describe("welcomeEmail", () => {
-    it("should return welcome subject and html with name", () => {
-        const { subject, html } = welcomeEmail("Name");
-        expect(subject).toBe("Welcome to our store!");
-        expect(html).toContain("Name")
+describe("verifyEmail", () => {
+    it("should return verify subject and html with name and verification token", () => {
+        const { subject, html } = verifyEmail("Name", "Token");
+        expect(subject).toBe("Verify your email address");
+        expect(html).toContain("Name");
+        expect(html).toContain("Token");
+    });
+});
+
+describe("passwordReset", () => {
+    it("should return password subject and html with reset token", () => {
+        const { subject, html } = passwordReset("Token");
+        expect(subject).toBe("Reset your password");
+        expect(html).toContain("Token");
     });
 });
 

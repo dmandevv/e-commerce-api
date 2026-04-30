@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { connectRabbitMQ } from './events/publisher.js';
 import { app } from './app.js';
 import { config } from './config/index.js';
 
@@ -7,6 +8,8 @@ const start = async (): Promise<void> => {
   try {
     await mongoose.connect(config.mongoUri);
     console.log('MongoDB connected');
+
+    await connectRabbitMQ();
 
     app.listen(config.port, () => {
       console.log(`User service running on port ${config.port}`);

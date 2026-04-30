@@ -4,6 +4,7 @@ export const EventNames = {
   // User events
   USER_REGISTERED: 'user.registered',
   USER_UPDATED: 'user.updated',
+  PASSWORD_RESET_REQUESTED: 'password.reset_requested',
 
   // Product events
   PRODUCT_CREATED: 'product.created',
@@ -30,6 +31,7 @@ export interface UserRegisteredEvent {
   userId: string;
   email: string;
   name: string;
+  verificationToken: string;
   timestamp: Date;
 }
 
@@ -38,6 +40,13 @@ export interface OrderPlacedEvent {
   userId: string;
   items: Array<{ productId: string; quantity: number; price: number }>;
   total: number;
+  timestamp: Date;
+}
+
+export interface PasswordResetRequestedEvent {
+  userId: string;
+  email: string;
+  resetToken: string;
   timestamp: Date;
 }
 
@@ -70,3 +79,4 @@ export interface OrderStatusUpdatedEvent {
   newStatus: string;
   timestamp: Date;
 }
+

@@ -105,13 +105,13 @@ function mockUserEmail(email: string) {
 
 // ─── Tests ────────────────────────────────────────────────────────
 describe("startConsumer", () => {
-  it("should connect and bind all 5 event queues", async () => {
+  it("should connect and bind all 6 event queues", async () => {
     await startConsumer(mockIo);
     expect(mockConnect).toHaveBeenCalledWith("amqp://localhost");
     expect(mockAssertExchange).toHaveBeenCalledWith("ecommerce.events", "topic", { durable: true });
     expect(mockAssertQueue).toHaveBeenCalledWith("notification-service.events", { durable: true });
-    // 5 bindings for the 5 event types
-    expect(mockBindQueue).toHaveBeenCalledTimes(5);
+    // 6 bindings for the 6 event types
+    expect(mockBindQueue).toHaveBeenCalledTimes(6);
     expect(mockConsume).toHaveBeenCalled();
   });
 });
@@ -123,19 +123,34 @@ describe("message handling", () => {
     return mockConsume.mock.calls[0][1];
   }
 
-  it("should send welcome email on user.registered", async () => {
+  it("should send verification email on user.registered", async () => {
     const callback = await getConsumeCallback();
     mockSendEmail.mockResolvedValue(undefined);
 
-    const msg = fakeMsg("user.registered", { email: "new@test.com", name: "Alice" });
+    const msg = fakeMsg("user.registered", { email: "new@test.com", name: "Alice", verificationToken: "1234abcd" });
     await callback(msg);
 
-    // sendEmail called with the user's email and a welcome subject
-    expect(mockSendEmail).toHaveBeenCalledWith(
-      "new@test.com",
-      "Welcome to our store!",
-      expect.stringContaining("Welcome, Alice")
-    );
+    // sendEmail called with the user's email, subject and verification token
+    const [to, subject, html] = mockSendEmail.mock.calls[0];
+    expect(to).toBe('new@test.com');
+    expect(subject).toBe('Verify your email address');
+    expect(html).toContain('Alice');
+    expect(html).toContain('1234abcd');
+    expect(mockAck).toHaveBeenCalledWith(msg);
+  });
+
+  it("should send password reset email on password.reset_requested", async () => {
+    const callback = await getConsumeCallback();
+    mockSendEmail.mockResolvedValue(undefined);
+
+    const msg = fakeMsg("password.reset_requested", { email: "new@test.com", resetToken: "1234abcd" });
+    await callback(msg);
+
+    // sendEmail called with the user's email, subject and reset token
+    const [to, subject, html] = mockSendEmail.mock.calls[0];
+    expect(to).toBe('new@test.com');
+    expect(subject).toBe('Reset your password');
+    expect(html).toContain('1234abcd');
     expect(mockAck).toHaveBeenCalledWith(msg);
   });
 

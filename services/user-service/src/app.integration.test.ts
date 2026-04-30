@@ -85,6 +85,13 @@ vi.mock('./lib/blacklist.js', () => ({
   blacklist: mockBlacklist,
 }));
 
+// ─── Mock RabbitMQ (no real publisher/consumer) ──────────
+vi.mock('./events/publisher.js', () => ({
+  publishEvent: vi.fn(),
+  connectRabbitMQ: vi.fn(),
+}));
+
+
 // ─── Import app AFTER mocks are set up ──────────────────
 // This is why we use vi.mock() — it hoists above imports automatically.
 // The app gets our mocked User model and config, not the real ones.
