@@ -132,21 +132,21 @@ jobs:
     name: Integration Test
     runs-on: ubuntu-latest
     needs: docker-build
-    env:
-      JWT_SECRET: b653704716e555b5849ace3716d24ca1deb45aa06976bf3989d9974d63147a0f
-      STRIPE_SECRET_KEY: sk_test_placeholder
-      STRIPE_WEBHOOK_SECRET: ""
-      CLIENT_URL: http://localhost:3000
-      
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Start all containers. --wait uses Docker healthchecks to block
-      # until every service reports healthy. No manual sleep needed —
-      # healthchecks in docker-compose.yml handle the timing.
+      # Install the Doppler CLI so we can inject secrets at runtime
+      - name: Install Doppler CLI
+        uses: dopplerhq/cli-action@v3
+
+      # Start all containers. Doppler injects secrets from the dev config
+      # via DOPPLER_TOKEN. --wait blocks until every service is healthy.
       - name: Start services
-        run: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build --wait --wait-timeout 120
+        run: doppler run -- docker compose up -d --build --wait --wait-timeout 120
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
 
       # Verify all containers are healthy and gateway responds
       - name: Run health checks

@@ -30,7 +30,7 @@ cleanup() {
     kill "$pid" 2>/dev/null
   done
   echo "Stopping containers..."
-  docker compose --env-file .env down
+  docker compose down
   echo "Done."
   exit 0
 }
@@ -39,7 +39,7 @@ trap cleanup SIGINT SIGTERM
 
 # ─── 1. Build & start everything (infrastructure + services + gateway) ───
 echo "Building and starting all containers..."
-docker compose --env-file .env up -d --build --wait
+doppler run -- docker compose up -d --build --wait
 
 echo "All containers ready."
 echo ""
