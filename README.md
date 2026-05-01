@@ -171,7 +171,11 @@ git clone https://github.com/dmandevv/E-Commerce-API.git
 cd E-Commerce-API
 npm install
 
-# 2. Start all services (7 services + databases + monitoring)
+# 2a. Quick start — no .env required (uses dev defaults, Stripe/Cloudinary won't work)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build --wait
+
+# 2b. Full start — copy .env.example, fill in real credentials, then:
+cp .env.example .env
 docker compose up -d --build --wait
 
 # 3. Seed the database (admin user + 10 products)

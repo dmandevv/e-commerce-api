@@ -146,7 +146,7 @@ jobs:
       # until every service reports healthy. No manual sleep needed —
       # healthchecks in docker-compose.yml handle the timing.
       - name: Start services
-        run: docker compose up -d --build --wait --wait-timeout 120     
+        run: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build --wait --wait-timeout 120
 
       # Verify all containers are healthy and gateway responds
       - name: Run health checks
