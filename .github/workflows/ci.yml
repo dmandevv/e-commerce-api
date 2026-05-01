@@ -148,11 +148,17 @@ jobs:
         env:
           DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
 
-      # Verify all containers are healthy and gateway responds
+      # Verify all containers are healthy and gateway responds.
+      # Doppler needed here because health-check.sh calls docker compose ps
+      # which also does variable interpolation.
       - name: Run health checks
-        run: bash scripts/health-check.sh
+        run: doppler run -- bash scripts/health-check.sh
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
 
       # If anything failed, dump logs so we can debug in the GitHub Actions UI
       - name: Dump logs on failure
         if: failure()
-        run: docker compose logs --tail=50
+        run: doppler run -- docker compose logs --tail=50
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
