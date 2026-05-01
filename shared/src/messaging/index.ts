@@ -5,7 +5,7 @@ export async function connectWithRetry(url: string, maxRetries = 10): Promise<am
     try {
       const conn = await amqplib.connect(url);
 
-      conn.on('error', (err) => {
+      conn.on('error', (err: Error) => {
         console.error('RabbitMQ publisher connection error:', err.message);
       });
 
