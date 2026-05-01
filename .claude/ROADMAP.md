@@ -1,6 +1,6 @@
 # E-Commerce Platform Roadmap
 
-> **Last updated:** 2026-04-23
+> **Last updated:** 2026-05-01
 > **Goal:** Transform the current project into a production-grade e-commerce platform comparable to Amazon.ca, following industry-standard practices for security, reliability, and user experience.
 
 ---
@@ -128,8 +128,8 @@
 - [x] Implement refresh token rotation (short-lived access token + long-lived refresh token in httpOnly cookie) — family-based rotation with reuse detection, MongoDB-backed opaque refresh tokens
 - [x] Move JWT from localStorage to httpOnly secure cookies (prevent XSS token theft) — access cookie (Path=/, 15m) + refresh cookie (Path=/api/users, 7d); silent refresh on 401 in frontend
 - [x] Add token revocation (Redis blacklist or versioned tokens) — access-token `jti` blacklist in Redis with TTL = remaining token life; shared `createAuthenticate` factory + per-service Redis client; fail-open on reads, fail-closed on writes
-- [ ] Implement email verification on registration (send verification link, activate account)
-- [ ] Implement password reset flow (forgot password -> email link -> reset form)
+- [x] Implement email verification on registration (send verification link, activate account)
+- [x] Implement password reset flow (forgot password -> email link -> reset form)
 - [x] Add CSRF protection middleware — stateless double-submit cookie pattern; `csrfProtection` + `issueCsrfToken` in shared; mounted on all services; frontend `apiFetch` auto-attaches `X-CSRF-Token`
 - [x] Sanitize all user-generated content (reviews, names) with DOMPurify or similar
 - [x] Implement account lockout after N failed login attempts
