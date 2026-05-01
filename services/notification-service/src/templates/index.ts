@@ -1,11 +1,26 @@
 
-export function welcomeEmail(name: string): { subject: string; html: string } {
+
+// Expiry times mirror TTL_BY_TYPE in user-service/src/lib/verificationToken.ts
+export function verifyEmail(name: string, verificationToken: string): { subject: string; html: string } {
   return {
-    subject: 'Welcome to our store!',
+    subject: 'Verify your email address',
     html: `
-      <h1>Welcome, ${name}!</h1>
-      <p>Your account has been created successfully.</p>
-      <p>Start browsing our products and find something you love.</p>
+      <h1>Hi ${name}, please verify your email</h1>
+      <p>Click the link below to verify your email address. The link expires in 24 hours.</p>
+      <a href="${process.env.CLIENT_URL}/verify-email/${verificationToken}">Verify my email</a>
+    `,
+  };
+}
+
+// Expiry times mirror TTL_BY_TYPE in user-service/src/lib/verificationToken.ts
+export function passwordReset(resetToken: string): { subject: string; html: string } {
+  return {
+    subject: 'Reset your password',
+    html: `
+      <h1>Password reset request</h1>
+      <p>Click the link below to reset your password. The link expires in 1 hour.</p>
+      <a href="${process.env.CLIENT_URL}/reset-password/${resetToken}">Reset my password</a>
+      <p>If you didn't request this, ignore this email.</p>
     `,
   };
 }

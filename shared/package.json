@@ -36,6 +36,7 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
+    "amqplib": "^0.10.5",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.3",
     "prom-client": "^15.1.3",
@@ -43,6 +44,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/sanitize-html": "^2.16.1"
   }
