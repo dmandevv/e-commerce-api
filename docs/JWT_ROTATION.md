@@ -26,14 +26,11 @@ verify access tokens with `JWT_SECRET`. When the secret changes:
 NEW_SECRET=$(openssl rand -hex 32)
 echo "New secret: $NEW_SECRET"
 
-# 2. Update root .env (used by docker-compose)
-sed -i "s/^JWT_SECRET=.*/JWT_SECRET=$NEW_SECRET/" .env
+# 2. Update the secret in Doppler (replaces .env editing)
+doppler secrets set JWT_SECRET="$NEW_SECRET" --project ecommerce --config dev_personal
+doppler secrets set JWT_SECRET="$NEW_SECRET" --project ecommerce --config dev
+doppler secrets set JWT_SECRET="$NEW_SECRET" --project ecommerce --config prd
 
-# 3. Update each service's .env (used by direct-run tests)
-for svc in cart-service notification-service order-service \
-           payment-service product-service user-service; do
-  sed -i "s/^JWT_SECRET=.*/JWT_SECRET=$NEW_SECRET/" services/$svc/.env
-done
-
-# 4. Restart the stack
+# 3. Restart the stack — Doppler injects the new value automatically
 npm run dev-test
+```

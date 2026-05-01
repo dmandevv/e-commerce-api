@@ -153,7 +153,7 @@ services:
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
       SMTP_FROM: ${SMTP_FROM}
-      CLIENT_URL: ${CLIENT_URL:?CLIENT_URL must be set in .env}
+      CLIENT_URL: ${CLIENT_URL:?CLIENT_URL must be set via Doppler or environment}
     healthcheck:
       test: wget -qO- http://127.0.0.1:3006/health || exit 1
       interval: 10s

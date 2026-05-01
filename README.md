@@ -174,7 +174,12 @@ npm install
 # 2a. Quick start — no .env required (uses dev defaults, Stripe/Cloudinary won't work)
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build --wait
 
-# 2b. Full start — copy .env.example, fill in real credentials, then:
+# 2b. Full start with Doppler (recommended) — secrets injected at runtime, no .env file needed
+#     Install Doppler CLI: https://docs.doppler.com/docs/install-cli
+#     Then: doppler login && doppler setup
+doppler run -- docker compose up -d --build --wait
+
+# 2c. Full start without Doppler — copy .env.example, fill in real credentials, then:
 cp .env.example .env
 docker compose up -d --build --wait
 
