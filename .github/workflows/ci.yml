@@ -136,6 +136,7 @@ jobs:
       JWT_SECRET: b653704716e555b5849ace3716d24ca1deb45aa06976bf3989d9974d63147a0f
       STRIPE_SECRET_KEY: sk_test_placeholder
       STRIPE_WEBHOOK_SECRET: ""
+      CLIENT_URL: http://localhost:3000
       
     steps:
       - name: Checkout code

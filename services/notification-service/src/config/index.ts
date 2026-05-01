@@ -20,6 +20,7 @@ interface Config {
   };
   fromEmail: string;
   userServiceUrl: string;
+  clientUrl: string;
 }
 
 export const config: Config = {
@@ -34,6 +35,7 @@ export const config: Config = {
     pass: process.env.SMTP_PASS || '',
   },
   fromEmail: process.env.SMTP_FROM || 'noreply@ecommerce.com',
+  clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
 };
 
 validateJwtSecret(config.jwtSecret);
