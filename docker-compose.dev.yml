@@ -31,7 +31,7 @@ services:
     environment:
       JWT_SECRET: dev_jwt_secret_not_for_production_use_only_32chars_min
       STRIPE_SECRET_KEY: sk_test_placeholder
-      STRIPE_WEBHOOK_SECRET: ""
+      STRIPE_WEBHOOK_SECRET: dev_placeholder
 
   notification-service:
     environment:
