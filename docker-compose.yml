@@ -254,6 +254,34 @@ services:
     networks:
       - ecommerce-network
 
+  notification-service:
+    build:
+      context: .
+      dockerfile: services/notification-service/Dockerfile
+    container_name: ecommerce-notification-service
+    restart: unless-stopped
+    environment:
+      PORT: 3006
+      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@ecommerce.com}
+      CLIENT_URL: ${CLIENT_URL:?CLIENT_URL must be set in .env}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: wget -qO- http://127.0.0.1:3006/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - ecommerce-network
+
   health-service:
     build:
       context: .
@@ -277,33 +305,6 @@ services:
         condition: service_healthy
     healthcheck:
       test: wget -qO- http://127.0.0.1:3007/health || exit 1
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
-    networks:
-      - ecommerce-network
-
-  notification-service:
-    build:
-      context: .
-      dockerfile: services/notification-service/Dockerfile
-    container_name: ecommerce-notification-service
-    restart: unless-stopped
-    environment:
-      PORT: 3006
-      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
-      SMTP_HOST: ${SMTP_HOST:-}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USER: ${SMTP_USER:-}
-      SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-noreply@ecommerce.com}
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    healthcheck:
-      test: wget -qO- http://127.0.0.1:3006/health || exit 1
       interval: 10s
       timeout: 5s
       retries: 5

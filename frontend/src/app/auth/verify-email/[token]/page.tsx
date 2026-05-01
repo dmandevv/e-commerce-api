@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
@@ -12,7 +12,13 @@ export default function VerifyEmailPage() {
   const [status, setStatus] = useState<Status>("loading");
   const [message, setMessage] = useState("");
 
+  // inside the component, before useEffect:
+  const hasVerified = useRef(false);
+
   useEffect(() => {
+    if (hasVerified.current) return;
+    hasVerified.current = true;
+    
     apiFetch(`/api/users/verify-email/${token}`)
       .then(() => setStatus("success"))
       .catch((err: unknown) => {

@@ -1,3 +1,4 @@
+import { config } from "../config/index.js";
 
 
 // Expiry times mirror TTL_BY_TYPE in user-service/src/lib/verificationToken.ts
@@ -7,7 +8,7 @@ export function verifyEmail(name: string, verificationToken: string): { subject:
     html: `
       <h1>Hi ${name}, please verify your email</h1>
       <p>Click the link below to verify your email address. The link expires in 24 hours.</p>
-      <a href="${process.env.CLIENT_URL}/verify-email/${verificationToken}">Verify my email</a>
+      <a href="${config.clientUrl}/auth/verify-email/${verificationToken}">Verify my email</a>
     `,
   };
 }
@@ -19,7 +20,7 @@ export function passwordReset(resetToken: string): { subject: string; html: stri
     html: `
       <h1>Password reset request</h1>
       <p>Click the link below to reset your password. The link expires in 1 hour.</p>
-      <a href="${process.env.CLIENT_URL}/reset-password/${resetToken}">Reset my password</a>
+      <a href="${config.clientUrl}/auth/reset-password/${resetToken}">Reset my password</a>
       <p>If you didn't request this, ignore this email.</p>
     `,
   };
