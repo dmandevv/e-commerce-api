@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import Link from "next/link";
@@ -8,13 +8,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 
+function ResetSuccessBanner() {
+  const searchParams = useSearchParams();
+  if (searchParams.get("reset") !== "success") return null;
+  return (
+    <div className="bg-green-50 border border-green-200 rounded-md p-3 text-sm text-green-700">
+      Password reset successfully. Please sign in with your new password.
+    </div>
+  );
+}
+
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const searchParams = useSearchParams();
-  const resetSuccess = searchParams.get("reset") === "success";
   const { login } = useAuth();
   const router = useRouter();
 
@@ -44,11 +53,9 @@ export default function LoginPage() {
 
         <div className="bg-white rounded-lg border p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {resetSuccess && (
-              <div className="bg-green-50 border border-green-200 rounded-md p-3 text-sm text-green-700">
-                Password reset successfully. Please sign in with your new password.
-              </div>
-            )}
+            <Suspense>
+              <ResetSuccessBanner />
+            </Suspense>
 
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-700">
