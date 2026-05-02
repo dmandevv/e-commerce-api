@@ -169,12 +169,14 @@ describe('POST /api/users/register', () => {
     expect(cookies.some((c) => c.startsWith('accessToken='))).toBe(true);
     expect(cookies.some((c) => c.startsWith('refreshToken='))).toBe(true);
 
-    // Verify User.create was called with the right data
+    // Verify User.create was called with the right data.
+    // emailVerified is true in test because NODE_ENV !== 'production'.
     expect(mockUser.create).toHaveBeenCalledWith({
       name: 'Test User',
       email: 'test@example.com',
       password: 'password123',
       role: 'customer',
+      emailVerified: true,
     });
   });
 
