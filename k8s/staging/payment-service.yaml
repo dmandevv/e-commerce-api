@@ -25,6 +25,7 @@ spec:
       containers:
         - name: payment-service
           image: ghcr.io/dmandevv/e-commerce-api/payment-service:staging
+          imagePullPolicy: Always
           ports:
             - containerPort: 3005
           env:

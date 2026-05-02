@@ -25,6 +25,7 @@ spec:
       containers:
         - name: cart-service
           image: ghcr.io/dmandevv/e-commerce-api/cart-service:staging
+          imagePullPolicy: Always
           ports:
             - containerPort: 3003
           env:
