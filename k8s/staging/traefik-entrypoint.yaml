@@ -1,0 +1,23 @@
+# ─────────────────────────────────────────────────────────
+# Traefik HelmChartConfig — add port 8080 entrypoint
+#
+# k3s deploys Traefik as a Helm chart. This resource patches
+# its values without touching the production entrypoints.
+#
+# After applying, open port 8080 on your server firewall:
+#   ufw allow 8080/tcp
+# ─────────────────────────────────────────────────────────
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    ports:
+      web-staging:
+        port: 8080
+        expose:
+          default: true
+        exposedPort: 8080
+        protocol: TCP
