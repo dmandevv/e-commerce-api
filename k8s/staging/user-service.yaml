@@ -25,6 +25,7 @@ spec:
       containers:
         - name: user-service
           image: ghcr.io/dmandevv/e-commerce-api/user-service:staging
+          imagePullPolicy: Always
           ports:
             - containerPort: 3001
           env:

@@ -25,6 +25,7 @@ spec:
       containers:
         - name: notification-service
           image: ghcr.io/dmandevv/e-commerce-api/notification-service:staging
+          imagePullPolicy: Always
           ports:
             - containerPort: 3006
           env:
