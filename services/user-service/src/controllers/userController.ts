@@ -12,7 +12,6 @@ import { createVerificationToken, consumeVerificationToken } from '../lib/verifi
 import { publishEvent } from '../events/publisher.js';
 import { EventNames } from '@ecommerce/shared/events';
 import type { PasswordResetRequestedEvent, UserRegisteredEvent } from '@ecommerce/shared/events';
-import { timeStamp } from 'node:console';
 
 
 function setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
@@ -47,8 +46,13 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     throw new ConflictError('User already exists');
   }
 
-  const user = await User.create({ name, email, password, role: 'customer' });
-  
+  const user = await User.create({
+    name, email, password, role: 'customer',
+    // Skip email verification outside production so staging/dev smoke tests
+    // and local development work without needing a real email flow.
+    emailVerified: process.env.NODE_ENV !== 'production',
+  });
+
   // Create email verification token. The raw value goes to notification-service
   // via RabbitMQ event. User can't log in until they consume it.
   const verificationToken = await createVerificationToken(
