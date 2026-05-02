@@ -182,6 +182,10 @@ check "POST /api/users/logout" "200"
 run_curl -b "$COOKIE_JAR" "$BASE_URL/api/users/profile"
 check "GET /api/users/profile  (after logout → 401)" "401"
 
+# Logout clears the csrfToken cookie — bootstrap a new one before login
+run_curl -b "$COOKIE_JAR" -c "$COOKIE_JAR" "$BASE_URL/api/users/csrf"
+refresh_csrf
+
 # Login — get a fresh accessToken into the cookie jar
 mut_curl -X POST "$BASE_URL/api/users/login" \
   -H "Content-Type: application/json" \
