@@ -107,10 +107,23 @@ check() {
 info() { echo -e "    ${YELLOW}↳${NC} $1"; }
 
 # ─────────────────────────────────────────────────────────
+# refresh_csrf
+#   Re-reads csrfToken from the cookie jar after any response
+#   that calls setAuthCookies (register, login) — the server
+#   generates a new random token and overwrites our pre-seeded
+#   value, so we sync the CSRF variable to match.
+# ─────────────────────────────────────────────────────────
+refresh_csrf() {
+  local token
+  token=$(grep 'csrfToken' "$COOKIE_JAR" 2>/dev/null | awk '{print $NF}' || true)
+  [[ -n "$token" ]] && CSRF="$token"
+}
+
+# ─────────────────────────────────────────────────────────
 # mut_curl <curl args…>
 #   Wrapper for mutating requests (POST/PATCH/DELETE).
-#   Adds the X-CSRF-Token header. The csrfToken cookie is
-#   already pre-seeded in the jar so callers just pass -b.
+#   Reads CSRF from the current value of $CSRF, which is kept
+#   in sync with the cookie jar via refresh_csrf.
 # ─────────────────────────────────────────────────────────
 mut_curl() {
   run_curl \
@@ -153,6 +166,7 @@ mut_curl -X POST "$BASE_URL/api/users/register" \
   -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
   -d "{\"name\":\"$TEST_NAME\",\"email\":\"$TEST_EMAIL\",\"password\":\"$TEST_PASS\"}"
 check "POST /api/users/register" "201"
+refresh_csrf
 
 # Profile — no CSRF needed (GET). Cookie jar sends accessToken automatically.
 run_curl -b "$COOKIE_JAR" "$BASE_URL/api/users/profile"
@@ -174,6 +188,7 @@ mut_curl -X POST "$BASE_URL/api/users/login" \
   -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
   -d "{\"email\":\"$TEST_EMAIL\",\"password\":\"$TEST_PASS\"}"
 check "POST /api/users/login" "200"
+refresh_csrf
 
 # Confirm new token works
 run_curl -b "$COOKIE_JAR" "$BASE_URL/api/users/profile"
