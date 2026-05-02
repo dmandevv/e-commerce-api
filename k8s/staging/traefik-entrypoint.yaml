@@ -16,3 +16,10 @@ spec:
   valuesContent: |-
     additionalArguments:
       - "--entrypoints.webstaging.address=:8081"
+    ports:
+      webstaging:
+        port: 8081
+        expose:
+          default: true
+        exposedPort: 8081
+        protocol: TCP
