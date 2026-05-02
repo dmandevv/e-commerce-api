@@ -10,7 +10,7 @@ import { useCartContext, type ICartItem } from "@/context/CartContext";
 import { apiFetch } from "@/lib/api";
 
 export default function CartPage() {
-  const { token, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const { cart, loading: cartLoading, removeItem, updateQuantity } =
     useCartContext();
   const router = useRouter();
@@ -18,10 +18,10 @@ export default function CartPage() {
 
   // ─── Auth guard ───────────────────────────────────────────
   useEffect(() => {
-    if (!authLoading && !token) {
+    if (!authLoading && !isAuthenticated) {
       router.replace("/auth/login");
     }
-  }, [authLoading, token, router]);
+  }, [authLoading, isAuthenticated, router]);
 
   // ─── Fetch product stocks ───────────────────────────────
   useEffect(() => {
@@ -48,7 +48,7 @@ export default function CartPage() {
     );
   }
 
-  if (!token) return null; // Will redirect
+  if (!isAuthenticated) return null; // Will redirect
 
   // ─── Empty cart state ───────────────────────────────────────
   if (!cart || cart.items.length === 0) {

@@ -1,0 +1,72 @@
+# ─────────────────────────────────────────────────────────
+# Staging IngressRoute — HTTP on port 8080
+#
+# Routes by path prefix only (no hostname required).
+# Access via: http://<server-ip>:8080/api/...
+#
+# No TLS — staging is HTTP only. Production handles HTTPS.
+# ─────────────────────────────────────────────────────────
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ecommerce-staging
+  namespace: ecommerce-staging
+spec:
+  entryPoints:
+    - webstaging
+  routes:
+    # ── Gateway health check ───────────────────────────
+    - match: PathPrefix(`/health`)
+      kind: Rule
+      services:
+        - name: health-service
+          port: 3007
+
+    # ── Health dashboard ───────────────────────────────
+    - match: PathPrefix(`/api/health`)
+      kind: Rule
+      services:
+        - name: health-service
+          port: 3007
+
+    # ── User service ───────────────────────────────────
+    - match: PathPrefix(`/api/users`)
+      kind: Rule
+      services:
+        - name: user-service
+          port: 3001
+
+    # ── Product service ────────────────────────────────
+    - match: PathPrefix(`/api/products`)
+      kind: Rule
+      services:
+        - name: product-service
+          port: 3002
+
+    # ── Cart service ───────────────────────────────────
+    - match: PathPrefix(`/api/cart`)
+      kind: Rule
+      services:
+        - name: cart-service
+          port: 3003
+
+    # ── Order service ──────────────────────────────────
+    - match: PathPrefix(`/api/orders`)
+      kind: Rule
+      services:
+        - name: order-service
+          port: 3004
+
+    # ── Payment service ────────────────────────────────
+    - match: PathPrefix(`/api/payments`)
+      kind: Rule
+      services:
+        - name: payment-service
+          port: 3005
+
+    # ── WebSocket (Socket.IO) ──────────────────────────
+    - match: PathPrefix(`/socket.io/`)
+      kind: Rule
+      services:
+        - name: notification-service
+          port: 3006

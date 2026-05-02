@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
+import { validateJwtSecret, validateEnv } from '@ecommerce/shared/middleware';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -25,7 +26,5 @@ export const config: Config = {
   productServiceUrl: process.env.PRODUCT_SERVICE_URL || 'http://product-service:3002',
 };
 
-if (!config.jwtSecret) {
-  console.error('FATAL: JWT_SECRET is not defined');
-  process.exit(1);
-}
+validateJwtSecret(config.jwtSecret);
+validateEnv(['REDIS_URL']);

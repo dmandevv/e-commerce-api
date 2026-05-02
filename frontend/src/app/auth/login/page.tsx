@@ -1,11 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
+
+function ResetSuccessBanner() {
+  const searchParams = useSearchParams();
+  if (searchParams.get("reset") !== "success") return null;
+  return (
+    <div className="bg-green-50 border border-green-200 rounded-md p-3 text-sm text-green-700">
+      Password reset successfully. Please sign in with your new password.
+    </div>
+  );
+}
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -41,6 +53,10 @@ export default function LoginPage() {
 
         <div className="bg-white rounded-lg border p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
+            <Suspense>
+              <ResetSuccessBanner />
+            </Suspense>
+
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-700">
                 {error}
@@ -73,6 +89,16 @@ export default function LoginPage() {
                 className="bg-white"
               />
             </div>
+
+            <div className="text-right">
+              <Link
+                href="/auth/forgot-password"
+                className="text-xs text-[#007185] hover:text-[#c45500] hover:underline"
+              >
+                Forgot your password?
+              </Link>
+            </div>
+
 
             <Button
               type="submit"

@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
+import { validateJwtSecret, validateEnv } from '@ecommerce/shared/middleware';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -19,6 +20,7 @@ interface Config {
   };
   fromEmail: string;
   userServiceUrl: string;
+  clientUrl: string;
 }
 
 export const config: Config = {
@@ -33,4 +35,8 @@ export const config: Config = {
     pass: process.env.SMTP_PASS || '',
   },
   fromEmail: process.env.SMTP_FROM || 'noreply@ecommerce.com',
+  clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
 };
+
+validateJwtSecret(config.jwtSecret);
+validateEnv(['RABBITMQ_URL', 'CLIENT_URL']);

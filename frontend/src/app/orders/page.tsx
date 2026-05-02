@@ -59,7 +59,7 @@ const STATUS_CONFIG: Record<
 };
 
 export default function OrdersPage() {
-  const { token, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [orders, setOrders] = useState<IOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,21 +68,19 @@ export default function OrdersPage() {
 
   // ─── Auth guard ───────────────────────────────────────────
   useEffect(() => {
-    if (!authLoading && !token) {
+    if (!authLoading && !isAuthenticated) {
       router.replace("/auth/login");
     }
-  }, [authLoading, token, router]);
+  }, [authLoading, isAuthenticated, router]);
 
   // ─── Fetch orders ──────────────────────────────────────────
   useEffect(() => {
-    if (authLoading || !token) return;
+    if (authLoading || !isAuthenticated) return;
 
     setLoading(true);
     setError(null);
 
-    apiFetch<{ success: boolean; data: IOrder[] }>("/api/orders/mine", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    apiFetch<{ success: boolean; data: IOrder[] }>("/api/orders/mine")
       .then((res) => {
         setOrders(res.data);
       })
@@ -94,7 +92,7 @@ export default function OrdersPage() {
       .finally(() => {
         setLoading(false);
       });
-  }, [token, authLoading]);
+  }, [isAuthenticated, authLoading]);
 
   // ─── Toggle expansion ──────────────────────────────────────
   const toggleExpanded = (orderId: string) => {
@@ -115,7 +113,7 @@ export default function OrdersPage() {
     );
   }
 
-  if (!token) return null; // Will redirect
+  if (!isAuthenticated) return null; // Will redirect
 
   // ─── Error state ──────────────────────────────────────────
   if (error) {

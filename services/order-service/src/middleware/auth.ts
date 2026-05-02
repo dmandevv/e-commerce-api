@@ -1,40 +1,10 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { createAuthenticate, authorize } from '@ecommerce/shared/middleware';
 import { config } from '../config/index.js';
-import { UnauthorizedError, ForbiddenError } from '@ecommerce/shared/errors';
-import type { JwtPayload } from '@ecommerce/shared/types';
+import { blacklist } from '../lib/blacklist.js';
 
-// ─── Authenticate ───────────────────────────────────────
-export const authenticate = (
-  req: Request,
-  _res: Response,
-  next: NextFunction
-): void => {
-  const authHeader = req.headers.authorization;
+export const authenticate = createAuthenticate({
+  jwtSecret: config.jwtSecret,
+  blacklist,
+});
 
-  if (!authHeader?.startsWith('Bearer ')) {
-    throw new UnauthorizedError('Login first to access this resource');
-  }
-
-  const token = authHeader.split(' ')[1];
-
-  try {
-    const decoded = jwt.verify(token, config.jwtSecret) as JwtPayload;
-    req.user = decoded;
-    next();
-  } catch {
-    throw new UnauthorizedError('Invalid or expired token');
-  }
-};
-
-// ─── Authorize Roles ────────────────────────────────────
-export const authorize = (...roles: string[]) => {
-  return (req: Request, _res: Response, next: NextFunction): void => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      throw new ForbiddenError(
-        `Role (${req.user?.role}) is not allowed to access this resource`
-      );
-    }
-    next();
-  };
-};
+export { authorize };

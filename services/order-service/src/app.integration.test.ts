@@ -32,6 +32,14 @@ vi.mock('./config/index.js', () => ({
 // ─── Mock swagger ───────────────────────────────────────
 vi.mock('./swagger.js', () => ({ default: {} }));
 
+// ─── Mock blacklist (no real Redis connection) ──────────
+vi.mock('./lib/blacklist.js', () => ({
+  blacklist: {
+    isBlacklisted: vi.fn().mockResolvedValue(false),
+    blacklistToken: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 // ─── Import app AFTER mocks ─────────────────────────────
 import { app } from './app.js';
 import { z, ORDER_STATUSES, NotFoundError } from '@ecommerce/shared';
@@ -41,6 +49,13 @@ const JWT_SECRET = 'test-secret-key';
 
 const createToken = (id: string, role: string = 'customer') =>
   jwt.sign({ id, role }, JWT_SECRET, { expiresIn: '1d' });
+
+// Attach CSRF cookie + matching header for mutating requests.
+// csrfProtection runs before routes, so every POST/PATCH/DELETE needs both.
+const withCsrf = (req: request.Test, extraCookies: string[] = []): request.Test =>
+  req
+    .set('Cookie', ['csrfToken=test-csrf', ...extraCookies])
+    .set('X-CSRF-Token', 'test-csrf');
 
 const customerToken = createToken('user1', 'customer');
 const adminToken = createToken('admin1', 'admin');
@@ -68,8 +83,7 @@ describe('POST /api/orders', () => {
   it('should place order and return 201', async () => {
     mockOrderService.placeOrder.mockResolvedValue(fakeOrder);
 
-    const res = await request(app)
-      .post('/api/orders')
+    const res = await withCsrf(request(app).post('/api/orders'))
       .set('Authorization', `Bearer ${customerToken}`);
 
     expect(res.status).toBe(201);
@@ -85,8 +99,7 @@ describe('POST /api/orders', () => {
 
   // no token (401)
   it('should reject when token is missing and return 401', async () => {
-    const res = await request(app)
-      .post('/api/orders')
+    const res = await withCsrf(request(app).post('/api/orders'))
 
     expect(res.status).toBe(401);
     expect(res.body.message).toBe('Login first to access this resource');
@@ -161,8 +174,7 @@ describe('PATCH /api/orders/:id/status', () => {
   it('should update status of order and return 200', async () => {
     mockOrderService.updateOrderStatus.mockResolvedValue({ ...fakeOrder, status: 'SHIPPED' });
 
-    const res = await request(app)
-      .patch('/api/orders/order1/status')
+    const res = await withCsrf(request(app).patch('/api/orders/order1/status'))
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ status: 'SHIPPED' });
 
@@ -174,8 +186,7 @@ describe('PATCH /api/orders/:id/status', () => {
   // invalid status (400 — Zod rejects it)
   it('should update status of order and return 200', async () => {
 
-    const res = await request(app)
-      .patch('/api/orders/order1/status')
+    const res = await withCsrf(request(app).patch('/api/orders/order1/status'))
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ status: 'INVALID' });
 
@@ -191,8 +202,7 @@ describe('PATCH /api/orders/:id/status', () => {
   // customer cannot update status (403)
   it('should reject customer\'s trying to update order status and return 403', async () => {
 
-    const res = await request(app)
-      .patch('/api/orders/order1/status')
+    const res = await withCsrf(request(app).patch('/api/orders/order1/status'))
       .set('Authorization', `Bearer ${customerToken}`)
       .send({ status: 'PAID' });
 

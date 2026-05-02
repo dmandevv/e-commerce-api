@@ -3,4 +3,5 @@ export * from './events/index.js';
 export * from './errors/index.js';
 export * from './constants.js';
 export * from './circuit-breaker/index.js';
+export * from './messaging/index.js';
 export { z } from 'zod';

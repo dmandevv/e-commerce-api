@@ -1,0 +1,39 @@
+# Development overrides for docker-compose.yml.
+# Provides hard-coded dev defaults so no .env file is required.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# Do NOT use in production — secrets are intentionally weak and public.
+
+services:
+  user-service:
+    environment:
+      JWT_SECRET: dev_jwt_secret_not_for_production_use_only_32chars_min
+
+  product-service:
+    environment:
+      JWT_SECRET: dev_jwt_secret_not_for_production_use_only_32chars_min
+      # Cloudinary placeholders — image upload won't work in dev without real values
+      CLOUDINARY_CLOUD_NAME: dev_placeholder
+      CLOUDINARY_API_KEY: dev_placeholder
+      CLOUDINARY_API_SECRET: dev_placeholder
+
+  cart-service:
+    environment:
+      JWT_SECRET: dev_jwt_secret_not_for_production_use_only_32chars_min
+
+  order-service:
+    environment:
+      JWT_SECRET: dev_jwt_secret_not_for_production_use_only_32chars_min
+
+  payment-service:
+    environment:
+      JWT_SECRET: dev_jwt_secret_not_for_production_use_only_32chars_min
+      STRIPE_SECRET_KEY: sk_test_placeholder
+      STRIPE_WEBHOOK_SECRET: dev_placeholder
+
+  notification-service:
+    environment:
+      JWT_SECRET: dev_jwt_secret_not_for_production_use_only_32chars_min
+      CLIENT_URL: http://localhost:3000

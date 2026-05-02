@@ -30,7 +30,7 @@ export async function sendEmail(
     console.log('─── EMAIL (console mode) ───');
     console.log(`To: ${to}`);
     console.log(`Subject: ${subject}`);
-    console.log(`Body: ${html.substring(0, 200)}...`);
+    console.log(`Body: ${html.substring(0, 500)}...`);
     console.log('────────────────────────────');
     return;
   }

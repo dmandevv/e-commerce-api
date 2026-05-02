@@ -1,6 +1,6 @@
 # E-Commerce Platform Roadmap
 
-> **Last updated:** 2026-04-01
+> **Last updated:** 2026-05-01
 > **Goal:** Transform the current project into a production-grade e-commerce platform comparable to Amazon.ca, following industry-standard practices for security, reliability, and user experience.
 
 ---
@@ -65,7 +65,6 @@
 | **Hardcoded secrets in .env.local** | Security risk if leaked | Weak JWT secret, dev credentials in repo |
 | **No password reset flow** | Users locked out permanently | Only login/register exist |
 | **No email verification** | Fake accounts, spam | Registration has no verification step |
-| **No CSRF protection** | Vulnerable to cross-site request forgery | JWT in localStorage, no CSRF tokens |
 | **No input sanitization** | XSS risk on user-generated content (reviews) | Zod validates shape but doesn't sanitize HTML |
 | **No admin dashboard** | Admin operations require API tools | Backend admin routes exist but no UI |
 
@@ -126,16 +125,16 @@
 - [x] Add tests to CI pipeline (fail PR if coverage drops) — Job 2 in ci.yml runs vitest with coverage thresholds
 
 #### 1.2 - Authentication & Security
-- [ ] Implement refresh token rotation (short-lived access token + long-lived refresh token in httpOnly cookie)
-- [ ] Add token revocation (Redis blacklist or versioned tokens)
-- [ ] Implement email verification on registration (send verification link, activate account)
-- [ ] Implement password reset flow (forgot password -> email link -> reset form)
-- [ ] Move JWT from localStorage to httpOnly secure cookies (prevent XSS token theft)
-- [ ] Add CSRF protection middleware
-- [ ] Sanitize all user-generated content (reviews, names) with DOMPurify or similar
-- [ ] Implement account lockout after N failed login attempts
-- [ ] Add security headers (Helmet.js): Content-Security-Policy, X-Frame-Options, etc.
-- [ ] Audit and rotate all secrets; use strong randomly generated JWT secrets
+- [x] Implement refresh token rotation (short-lived access token + long-lived refresh token in httpOnly cookie) — family-based rotation with reuse detection, MongoDB-backed opaque refresh tokens
+- [x] Move JWT from localStorage to httpOnly secure cookies (prevent XSS token theft) — access cookie (Path=/, 15m) + refresh cookie (Path=/api/users, 7d); silent refresh on 401 in frontend
+- [x] Add token revocation (Redis blacklist or versioned tokens) — access-token `jti` blacklist in Redis with TTL = remaining token life; shared `createAuthenticate` factory + per-service Redis client; fail-open on reads, fail-closed on writes
+- [x] Implement email verification on registration (send verification link, activate account)
+- [x] Implement password reset flow (forgot password -> email link -> reset form)
+- [x] Add CSRF protection middleware — stateless double-submit cookie pattern; `csrfProtection` + `issueCsrfToken` in shared; mounted on all services; frontend `apiFetch` auto-attaches `X-CSRF-Token`
+- [x] Sanitize all user-generated content (reviews, names) with DOMPurify or similar
+- [x] Implement account lockout after N failed login attempts
+- [x] Add security headers (Helmet.js): Content-Security-Policy, X-Frame-Options, etc.
+- [x] Audit and rotate all secrets; use strong randomly generated JWT secrets — `validateJwtSecret` helper rejects weak/missing values at boot; all 6 services wired; dev secrets rotated; CI uses strong hex; docker-compose uses `${JWT_SECRET:?}` strict-fail; rotation playbook at `docs/JWT_ROTATION.md`
 - [ ] Set up proper CORS allowlists per environment (no wildcard `*` in production)
 
 #### 1.3 - Environment Separation
