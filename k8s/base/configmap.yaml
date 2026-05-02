@@ -20,3 +20,4 @@ data:
   # Non-secret config
   CART_TTL: "259200"
   SMTP_PORT: "587"
+  CLIENT_URL: "https://dmandevv.shop"
