@@ -15,4 +15,4 @@ metadata:
 spec:
   valuesContent: |-
     additionalArguments:
-      - "--entrypoints.webstaging.address=:8080"
+      - "--entrypoints.webstaging.address=:8081"
