@@ -14,10 +14,12 @@ metadata:
   namespace: kube-system
 spec:
   valuesContent: |-
+    additionalArguments:
+      - "--entrypoints.webstaging.address=:8081"
     ports:
-      web-staging:
-        port: 8080
+      webstaging:
+        port: 8081
         expose:
           default: true
-        exposedPort: 8080
+        exposedPort: 8081
         protocol: TCP

@@ -23,4 +23,4 @@ data:
   # Non-secret config
   CART_TTL: "259200"
   SMTP_PORT: "587"
-  CLIENT_URL: "http://staging.dmandevv.shop:8080"
+  CLIENT_URL: "http://localhost:8081"

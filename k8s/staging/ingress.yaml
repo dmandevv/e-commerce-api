@@ -13,7 +13,7 @@ metadata:
   namespace: ecommerce-staging
 spec:
   entryPoints:
-    - web-staging
+    - webstaging
   routes:
     # ── Gateway health check ───────────────────────────
     - match: PathPrefix(`/health`)
