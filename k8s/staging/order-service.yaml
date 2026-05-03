@@ -25,6 +25,7 @@ spec:
       containers:
         - name: order-service
           image: ghcr.io/dmandevv/e-commerce-api/order-service:staging
+          imagePullPolicy: Always
           ports:
             - containerPort: 3004
           env:
