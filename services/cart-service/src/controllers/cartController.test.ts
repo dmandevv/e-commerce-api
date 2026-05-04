@@ -113,29 +113,29 @@ describe("getCart", () => {
 
 describe("updateQuantity", () => {
   it("should update quantity of item in cart", async () => {
-    const item = { productId: "p1", name: "Phone", price: 10, quantity: 1, image: "" };
+    const item = { productId: "p1", name: "Phone", price: 10, quantity: 1, image: "", variantId: 'v1' };
     const updatedCart = { userId: "user123", items: [{ ...item, quantity: 5 }], total: 50 };
     mockUpdateQuantity.mockResolvedValue(updatedCart);
-    const req = mockReq({ params: { productId: "p1" }, body: { quantity: 5 } });
+    const req = mockReq({ params: { variantId: 'v1' }, body: { quantity: 5 } });
     const res = mockRes();
     await updateQuantity(req, res);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({ success: true, data: updatedCart });
-    expect(mockUpdateQuantity).toHaveBeenCalledWith("user123", "p1", 5);
+    expect(mockUpdateQuantity).toHaveBeenCalledWith("user123", "v1", 5);
   });
 });
 
 describe("removeItem", () => {
   it("should remove item from cart", async () => {
-    const item = { productId: "p1", name: "Phone", price: 10, quantity: 1, image: "" };
+    const item = { productId: "p1", name: "Phone", price: 10, quantity: 1, image: "", variantId: 'v1' };
     const updatedCart = { userId: "user123", items: [], total: 0 };
     mockRemoveItem.mockResolvedValue(updatedCart);
-    const req = mockReq({ params: { productId: "p1" } });
+    const req = mockReq({ params: { variantId: 'v1' } });
     const res = mockRes();
     await removeItem(req, res);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({ success: true, data: updatedCart });
-    expect(mockRemoveItem).toHaveBeenCalledWith("user123", "p1");
+    expect(mockRemoveItem).toHaveBeenCalledWith("user123", "v1");
   });
 });
 
@@ -153,11 +153,11 @@ describe("clearCart", () => {
 
 describe("addItem", () => {
   it("should add item when product exists and has stock", async () => {
-    mockFetch.mockResolvedValue({ok: true, json: () => Promise.resolve({ data: { name: "Phone", price: 10, stock: 50, images: [] } })})
-    const item = { productId: "p1", name: "Phone", price: 10, quantity: 1, image: "" };
+    mockFetch.mockResolvedValue({ok: true, json: () => Promise.resolve({ data: { name: "Phone", price: 10, images: [], variants: [{ id: 'v1', stock: 50, reservedStock: 0 }] } })})
+    const item = { productId: "p1", name: "Phone", price: 10, quantity: 1, image: "", variantId: 'v1' };
     const updatedCart = { userId: "user123", items: [item], total: 10 }; 
     mockAddItem.mockResolvedValue(updatedCart);
-    const req = mockReq({body: { productId: "p1", quantity: 1 } });
+    const req = mockReq({body: { variantId: "v1", quantity: 1 } });
     const res = mockRes();
     await addItem(req, res);
     expect(res.status).toHaveBeenCalledWith(200);
@@ -165,13 +165,13 @@ describe("addItem", () => {
   });
   it("should throw when product not found", async () => {
     mockFetch.mockResolvedValue({ok: false });
-    const req = mockReq({body: { productId: "fake_item", quantity: 1 } });
+    const req = mockReq({body: { variantId: "fake_item", quantity: 1 } });
     const res = mockRes();
     await expect(addItem(req, res)).rejects.toThrow();
   });
   it("should throw when insufficient stock", async () => {
-    mockFetch.mockResolvedValue({ok: true, json: () => Promise.resolve({ data: { name: "Phone", price: 10, stock: 1, images: [] } })})
-    const req = mockReq({body: { productId: "p1", quantity: 2 } });
+    mockFetch.mockResolvedValue({ok: true, json: () => Promise.resolve({ data: { name: "Phone", price: 10, images: [], variants: [{ id: 'v1', stock: 1, reservedStock: 0 }] } })})
+    const req = mockReq({body: { variantId: "v1", quantity: 2 } });
     const res = mockRes();
     await expect(addItem(req, res)).rejects.toThrow();
   });

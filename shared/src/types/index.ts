@@ -8,26 +8,47 @@ export interface JwtPayload {
 }
 
 // ─── User ───────────────────────────────────────────────
+export interface IAddress {
+  id: string;
+  label: string; // e.g. "Home", "Work"
+  street: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  country: string;
+  isDefault: boolean;
+}
+
 export interface IUser {
   id: string;
   name: string;
   email: string;
   role: 'customer' | 'admin';
+  addresses: IAddress[];
   createdAt: Date;
   updatedAt: Date;
 }
 
 // ─── Product ────────────────────────────────────────────
+export interface IProductVariant {
+  id: string;
+  sku: string;
+  attributes: { size?: string; color?: string; [key: string]: string | undefined }; //e.g. { size: "M", material: "cotton" }
+  stock: number;
+  reservedStock: number; // units held during pending payments
+  price?: number; // overrides base price when set
+}
+
 export interface IProduct {
   id: string;
   name: string;
   description: string;
   price: number;
   category: string;
-  stock: number;
   images: Array<{ publicId: string; url: string }>;
   rating: number;
   numOfReviews: number;
+  variants: [IProductVariant, ...IProductVariant[]];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -39,6 +60,7 @@ export interface ICartItem {
   price: number;
   quantity: number;
   image: string;
+  variantId: string;
 }
 
 export interface ICart {
@@ -55,6 +77,7 @@ export interface IOrderItem {
   name: string;
   price: number;
   quantity: number;
+  variantId: string;
 }
 
 export interface IOrder {
@@ -62,6 +85,14 @@ export interface IOrder {
   userId: string;
   items: IOrderItem[];
   total: number;
+  shippingAddress: {
+    name: string;
+    street: string;
+    city: string;
+    province: string;
+    postalCode: string;
+    country: string;
+  }
   status: OrderStatus;
   stripePaymentId: string;
   createdAt: Date;

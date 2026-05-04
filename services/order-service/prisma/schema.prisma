@@ -20,6 +20,14 @@ model Order {
   userId          String
   status          OrderStatus @default(PENDING)
   total           Decimal     @db.Decimal(10, 2)
+  
+  shippingName     String
+  shippingStreet   String
+  shippingCity     String
+  shippingProvince String
+  shippingPostal   String
+  shippingCountry  String
+
   stripePaymentId String?
   items           OrderItem[]
   createdAt       DateTime    @default(now())
@@ -37,6 +45,7 @@ model OrderItem {
   name      String
   price     Decimal @db.Decimal(10, 2)
   quantity  Int
+  variantId String
 
   @@map("order_items")
 }

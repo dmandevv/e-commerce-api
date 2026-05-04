@@ -3,21 +3,66 @@ import bcrypt from 'bcryptjs';
 import validator from 'validator';
 
 // ─── Interface ──────────────────────────────────────────
-// Describes the shape of a User document in TypeScript
+export interface IAddressDocument {
+  _id: mongoose.Types.ObjectId;
+  label: string; // e.g. "Home", "Work"
+  street: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  country: string;
+  isDefault: boolean;
+}
+
 export interface IUserDocument extends Document {
   name: string;
   email: string;
   password: string;
-  role: 'customer' | 'admin';
-  createdAt: Date;
-  updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
+  role: 'customer' | 'admin';
+  addresses: IAddressDocument[];
   failedLoginAttempts: number;
   lockedUntil?: Date;
   emailVerified: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // ─── Schema ─────────────────────────────────────────────
+const addressSchema = new Schema<IAddressDocument>(
+  {
+    label: {
+      type: String,
+      required: [true, 'Please enter a label that describes address'],
+    },
+    street: {
+      type: String,
+      required: [true, 'Please enter a street name'],
+    },
+    city: {
+      type: String,
+      required: [true, 'Please enter a city name'],
+    },
+    province: {
+      type: String,
+      required: [true, 'Please enter a province/state name'],
+    },
+    postalCode: {
+      type: String,
+      required: [true, 'Please enter a postal code'],
+    },
+    country: {
+      type: String,
+      required: [true, 'Please enter a country name'],
+      default: 'Canada',
+    },
+    isDefault: {
+      type: Boolean,
+      default: false,
+    },
+  }
+);
+
 const userSchema = new Schema<IUserDocument>(
   {
     name: {
@@ -41,6 +86,10 @@ const userSchema = new Schema<IUserDocument>(
       type: String,
       enum: ['customer', 'admin'],
       default: 'customer',
+    },
+    addresses: {
+      type: [addressSchema],
+      default: [],
     },
     failedLoginAttempts: {
       type: Number,

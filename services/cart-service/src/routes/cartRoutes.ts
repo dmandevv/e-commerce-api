@@ -18,8 +18,8 @@ router.use(authenticate);
 
 router.get('/', asyncHandler(getCart));
 router.post('/items', validate(addItemSchema), asyncHandler(addItem));
-router.patch('/items/:productId', validate(updateQuantitySchema), asyncHandler(updateQuantity));
-router.delete('/items/:productId', asyncHandler(removeItem));
+router.patch('/items/:variantId', validate(updateQuantitySchema), asyncHandler(updateQuantity));
+router.delete('/items/:variantId', asyncHandler(removeItem));
 router.delete('/', asyncHandler(clearCart));
 
 export default router;
