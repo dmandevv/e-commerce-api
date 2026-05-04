@@ -39,10 +39,14 @@ export function requestId(req: Request, res: Response, next: NextFunction): void
  * Returns 400 with field-level errors if validation fails.
  * Replaces req.body with the parsed (clean) data if validation passes.
  */
-export function validate(schema: ZodType) {
+export function validate(schema: ZodType, target: 'body' | 'params' = 'body') {
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
-      req.body = schema.parse(req.body);
+      if (target === 'params') {
+        req.params = schema.parse(req.params) as Record<string, string>;
+      } else {
+        req.body = schema.parse(req.body);
+      }
       next();
     } catch (err) {
       if (err instanceof ZodError) {

@@ -60,6 +60,7 @@ vi.mock("../events/publisher.js", () => ({
 // ─── Mock: Config ─────────────────────────────────────────────────
 vi.mock("../config/index.js", () => ({
   config: {
+    userServiceUrl: "http://cart-service:3001",
     cartServiceUrl: "http://cart-service:3003",
     productServiceUrl: "http://product-service:3002",
   },
@@ -167,8 +168,9 @@ describe("updateOrderStatus", () => {
 });
 
 describe("placeOrder", () => {
-    const orderItem = { productId: "p1", name: "product1", price: 1, quantity: 1 };
-    const cart = { items: [orderItem] }
+    const orderItem = { productId: "p1", name: "product1", price: 1, quantity: 1, variantId: 'v1' };
+    const cart = { items: [orderItem] };
+    const address = { name: 'John', addresses: [{ _id: 'addr1', street: '123 Main', city: 'Toronto', province: 'ON', postalCode: 'M1A1A1', country: 'Canada', isDefault: true }] };
     const successfulOrder = { id: "order1", userId: "user123", items: [orderItem], total: 1, status: "PAID", stripePaymentId: "stripe", createdAt: Date.now(), updatedAt: Date.now() };
     it("should successfully place an order", async () => {
         const mockResponse = (data: any) => ({
@@ -177,16 +179,18 @@ describe("placeOrder", () => {
         });
 
         //fetch users cart
-        mockFetch.mockResolvedValueOnce(mockResponse(cart));
+        mockFetch.mockResolvedValueOnce(mockResponse(cart));   
         //check db for products price and stock
-        mockFetch.mockResolvedValueOnce(mockResponse({ ...orderItem, stock: 1}));
+        mockFetch.mockResolvedValueOnce(mockResponse({ ...orderItem,  variants: [{ id: 'v1', stock: 1, reservedStock: 0 }]}));
+        //fetch users address
+        mockFetch.mockResolvedValueOnce(mockResponse(address));
         //delete cart
         mockFetch.mockResolvedValueOnce(mockResponse({ ok: true }));
 
         mockPrismaOrderCreate.mockResolvedValue(successfulOrder);
         mockPublishEvent.mockResolvedValue(undefined);
 
-        const result = await placeOrder("user123", "token123", "req-1");
+        const result = await placeOrder("user123", "addr1", "token123", "req-1");
         expect(result).toEqual(successfulOrder);
         expect(mockPrismaOrderCreate).toHaveBeenCalled();
         expect(mockPublishEvent).toHaveBeenCalled();
@@ -197,11 +201,12 @@ describe("placeOrder", () => {
             ok: true,
             json: () => Promise.resolve({ data: emptyCart }),
         });
+        //fetch users cart
         mockFetch.mockResolvedValueOnce(mockResponse());
-        await expect(placeOrder("user123", "token123", "req-1")).rejects.toThrow(ValidationError);
+        await expect(placeOrder("user123", "addr1", "token123", "req-1")).rejects.toThrow(ValidationError);
     });
     it("should return an error if any item is out of stock", async () => {
-        const item = { productId: "p1", name: "product1", price: 1, quantity: 1 };
+        const item = { productId: "p1", name: "product1", price: 1, quantity: 1, variantId: 'v1' };
         const cart = { items: [item] }
         const mockResponse = (data: any) => ({
             ok: true,
@@ -211,8 +216,8 @@ describe("placeOrder", () => {
         //fetch cart
         mockFetch.mockResolvedValueOnce(mockResponse(cart));
         //fetch product with insufficient stock
-        mockFetch.mockResolvedValueOnce(mockResponse({ name: "product1", price: 1, stock: 0 }));
+        mockFetch.mockResolvedValueOnce(mockResponse({ name: "product1", price: 1, variants: [{ id: 'v1', stock: 0, reservedStock: 0 }] }));
 
-        await expect(placeOrder("user123", "token123", "req-1")).rejects.toThrow(ValidationError);
+        await expect(placeOrder("user123", "addr1", "token123", "req-1")).rejects.toThrow(ValidationError);
     });
 });

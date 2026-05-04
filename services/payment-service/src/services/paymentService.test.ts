@@ -83,7 +83,10 @@ describe("createPaymentForOrder", () => {
         //returns null (no existing payment)
         mockPaymentFindUnique.mockResolvedValue(null);
         mockStripeCreate.mockResolvedValue( { id: "pi_123", client_secret: "secret_123" });
-        await createPaymentForOrder({ orderId: "order1", userId: "user1", total: 50, items: [], timestamp: new Date() });
+        await createPaymentForOrder({ 
+            orderId: "order1", userId: "user1", total: 50, items: [],
+            shippingAddress: { name: 'John', street: '123 Main St', city: 'Toronto', province: 'ON', postalCode: 'M1A 1A1', country: 'Canada' },
+            timestamp: new Date() });
         expect(mockStripeCreate).toHaveBeenCalledWith({ amount: 5000, currency: 'cad', metadata: { orderId: "order1", userId: "user1" } });
         expect(mockPaymentCreate).toHaveBeenCalledWith({
             data: {
@@ -97,7 +100,10 @@ describe("createPaymentForOrder", () => {
     });
     it("should skip if payment already exists (idempotent)", async () => {
         mockPaymentFindUnique.mockResolvedValue({ });
-        await createPaymentForOrder({ orderId: "order1", userId: "user1", total: 50, items: [], timestamp: new Date() });
+        await createPaymentForOrder({ 
+            orderId: "order1", userId: "user1", total: 50, items: [],
+            shippingAddress: { name: 'John', street: '123 Main St', city: 'Toronto', province: 'ON', postalCode: 'M1A 1A1', country: 'Canada' },
+            timestamp: new Date() });
         expect(mockStripeCreate).not.toHaveBeenCalled();
         expect(mockPaymentCreate).not.toHaveBeenCalled();
     });

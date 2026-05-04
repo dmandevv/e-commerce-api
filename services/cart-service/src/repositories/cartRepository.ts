@@ -55,7 +55,7 @@ export class CartRepository {
     const cart = await this.getCart(userId);
 
     const existingIndex = cart.items.findIndex(
-      (i) => i.productId === item.productId
+      (i) => i.variantId === item.variantId
     );
 
     if (existingIndex >= 0) {
@@ -72,10 +72,10 @@ export class CartRepository {
   }
 
   // ─── Update item quantity ───────────────────────────────
-  async updateQuantity(userId: string, productId: string, quantity: number): Promise<ICart> {
+  async updateQuantity(userId: string, variantId: string, quantity: number): Promise<ICart> {
     const cart = await this.getCart(userId);
 
-    const item = cart.items.find((i) => i.productId === productId);
+    const item = cart.items.find((i) => i.variantId === variantId);
     if (!item) {
       throw new Error('Item not found in cart');
     }
@@ -87,10 +87,10 @@ export class CartRepository {
   }
 
   // ─── Remove item ───────────────────────────────────────
-  async removeItem(userId: string, productId: string): Promise<ICart> {
+  async removeItem(userId: string, variantId: string): Promise<ICart> {
     const cart = await this.getCart(userId);
 
-    cart.items = cart.items.filter((i) => i.productId !== productId);
+    cart.items = cart.items.filter((i) => i.variantId !== variantId);
     cart.total = this.calculateTotal(cart.items);
     await this.saveCart(cart);
     return cart;

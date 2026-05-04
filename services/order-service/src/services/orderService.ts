@@ -4,16 +4,17 @@ import { publishEvent } from '../events/publisher.js';
 import { EventNames } from '@ecommerce/shared/events';
 import { NotFoundError, ValidationError } from '@ecommerce/shared/errors';
 import { CircuitBreaker } from '@ecommerce/shared';
-import type { ICart } from '@ecommerce/shared/types';
+import type { ICart, IUser } from '@ecommerce/shared/types';
 import type { OrderPlacedEvent } from '@ecommerce/shared/events';
 
 // Separate breaker per downstream service.
 // cart-service being down shouldn't affect product-service calls and vice versa.
+const userBreaker = new CircuitBreaker({ name: 'user-service' });
 const cartBreaker = new CircuitBreaker({ name: 'cart-service' });
 const productBreaker = new CircuitBreaker({ name: 'product-service' });
 
 // ─── Place Order ────────────────────────────────────────
-export async function placeOrder(userId: string, token: string, requestId?: string) {
+export async function placeOrder(userId: string, addressId: string, token: string, requestId?: string) {
   // 1. Fetch user's cart from cart-service
   const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
   if (requestId) headers['X-Request-Id'] = requestId;
@@ -53,17 +54,19 @@ export async function placeOrder(userId: string, token: string, requestId?: stri
 
       const { data: product } = await res.json();
 
-      if (product.stock < item.quantity) {
-        throw new ValidationError(
-          `"${product.name}" only has ${product.stock} in stock (requested ${item.quantity})`
-        );
-      }
+      const variant = product.variants.find((v: any) => v.id === item.variantId);
+      if (!variant) throw new ValidationError(`Variant for "${item.name}" not found`);
+      const available = variant.stock - variant.reservedStock;
+      if (available < item.quantity) { throw new ValidationError(
+          `"${product.name}" only has ${available} in stock (requested ${item.quantity})`
+      )};
 
       return {
         productId: item.productId,
         name: product.name,
         price: product.price,
         quantity: item.quantity,
+        variantId: item.variantId,
       };
     })
   );
@@ -73,12 +76,30 @@ export async function placeOrder(userId: string, token: string, requestId?: stri
     verifiedItems.reduce((sum, item) => sum + item.price * item.quantity, 0) * 100
   ) / 100;
 
-  // 3. Create order with verified data
+  
+  // 3. Fetch user's address snapshot from user-service
+  const userRes = await userBreaker.fire(() =>
+    fetch(`${config.userServiceUrl}/api/users/internal/${userId}`)
+  );
+  if (!userRes.ok) throw new ValidationError('Failed to fetch user');
+  const { data: user }: { data: IUser } = await userRes.json();
+
+  const address = user.addresses.find((a: any) => a._id === addressId);
+  if (!address) throw new NotFoundError('Address');
+
+
+  // 4. Create order with verified data
   const order = await prisma.$transaction(async (tx) => {
     const created = await tx.order.create({
       data: {
         userId,
         total,
+        shippingName: user.name,
+        shippingStreet: address.street,
+        shippingCity: address.city,
+        shippingProvince: address.province,
+        shippingPostal: address.postalCode,
+        shippingCountry: address.country,
         items: {
           create: verifiedItems,
         },
@@ -89,7 +110,7 @@ export async function placeOrder(userId: string, token: string, requestId?: stri
     return created;
   });
 
-  // 4. Clear the cart after successful order.
+  // 5. Clear the cart after successful order.
   // Wrapped in breaker but also in try/catch — if clearing fails,
   // the order was already created. Better to have a stale cart
   // than to fail the entire order.
@@ -101,16 +122,25 @@ export async function placeOrder(userId: string, token: string, requestId?: stri
     console.error('Failed to clear cart after order — cart may be stale');
   }
 
-  // 5. Publish event for payment-service and notification-service
+  // 6. Publish event for payment-service and notification-service
   const event: OrderPlacedEvent = {
     orderId: order.id,
     userId,
     items: order.items.map((item) => ({
       productId: item.productId,
+      variantId: item.variantId,
       quantity: item.quantity,
       price: Number(item.price),
     })),
     total: Number(order.total),
+    shippingAddress: { 
+      name: user.name,
+      street: address.street,
+      city: address.city,
+      province: address.province,
+      postalCode: address.postalCode,
+      country: address.country,
+    },
     timestamp: new Date(),
   };
 
