@@ -133,6 +133,7 @@ const fakeUser = {
   failedLoginAttempts: 0,
   lockedUntil: undefined as Date | undefined,
   emailVerified: true,
+  addresses: [] as any[],
   comparePassword: vi.fn(),
   save: vi.fn(),
 };
@@ -705,5 +706,73 @@ describe('POST /api/users/reset-password/:token', () => {
     expect(res.body.message).toBe('User not found');
     expect(fakeUser.save).not.toHaveBeenCalled();
     expect(vi.mocked(RefreshToken.updateMany)).not.toHaveBeenCalled();
+  });
+});
+
+describe('POST /api/users/addresses', () => {
+  it('should add an address and return 201', async () => {
+    // fakeUser.addresses.push() needs to work, and save() resolves
+    fakeUser.addresses = [];
+    fakeUser.save.mockResolvedValue(undefined);
+    mockUser.findById.mockResolvedValue(fakeUser);
+
+    const res = await withCsrf(request(app)
+      .post('/api/users/addresses')
+      .set('Authorization', `Bearer ${createToken('user123')}`)
+      .send({ label: 'Home', street: '123 Main St', city: 'Toronto', province: 'ON', postalCode: 'M1A1A1', country: 'Canada', isDefault: false })
+    );
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+  });
+});
+
+describe('PUT /api/users/addresses/:addressId', () => {
+  it('should update an address and return 204', async () => {
+    // fakeUser.addresses.push() needs to work, and save() resolves
+    fakeUser.addresses = [{
+      _id: { toString: () => 'addr1' },
+      label: 'Home',
+      street: 'Main St',
+      city: "Vancouver",
+      province: "BC",
+      postalCode: 'V1EV1C',
+      country: 'Canada',
+      isDefault: true,
+    }];
+    mockUser.findById.mockResolvedValue(fakeUser);   
+    fakeUser.save.mockResolvedValue(undefined);
+
+    const res = await withCsrf(request(app)
+      .put('/api/users/addresses/addr1')
+      .set('Authorization', `Bearer ${createToken('user123')}`)
+      .send({ label: 'Home', street: '123 Main St', city: 'Toronto', province: 'ON', postalCode: 'M1A1A1', country: 'Canada', isDefault: false })
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.address.street).toBe('123 Main St');
+  });
+});
+
+describe('DELETE /api/users/addresses/:addressId', () => {
+  it('should delete an address and return 204', async () => {
+    // fakeUser.addresses.push() needs to work, and save() resolves
+    fakeUser.addresses = [{
+      _id: { toString: () => 'addr1' }, 
+      label: 'Home',
+      street: 'Main St',
+      city: "Vancouver",
+      province: "BC",
+      postalCode: 'V1EV1C',
+      country: 'Canada',
+      isDefault: true,
+    }];
+    mockUser.findById.mockResolvedValue(fakeUser);   
+    fakeUser.save.mockResolvedValue(undefined);
+
+    const res = await withCsrf(request(app)
+      .del('/api/users/addresses/addr1')
+      .set('Authorization', `Bearer ${createToken('user123')}`)
+    );
+    expect(res.status).toBe(204);
   });
 });
