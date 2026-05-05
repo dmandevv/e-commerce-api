@@ -18,7 +18,7 @@ export const getCart = async (req: Request, res: Response): Promise<void> => {
 
 // ─── Add Item to Cart ───────────────────────────────────
 export const addItem = async (req: Request, res: Response): Promise<void> => {
-  const { productId, quantity } = req.body;
+  const { productId, variantId, quantity } = req.body;
 
   // Fetch the real product from product-service (not trusting client data).
   // Wrapped in circuit breaker: if product-service has failed 5 times in a row,
@@ -32,9 +32,10 @@ export const addItem = async (req: Request, res: Response): Promise<void> => {
 
   const { data: product } = await productRes.json();
 
-  if (product.stock < quantity) {
-    throw new ValidationError(`Only ${product.stock} items in stock`);
-  }
+  const variant = product.variants.find((v: any) => (v._id ?? v.id)?.toString() === variantId);
+  if (!variant) throw new NotFoundError('Variant');
+  const available = variant.stock - variant.reservedStock;
+  if (available < quantity) throw new ValidationError(`Only ${available} items in stock`);
 
   const cart = await cartRepository.addItem(req.user!.id, {
     productId,
@@ -42,19 +43,20 @@ export const addItem = async (req: Request, res: Response): Promise<void> => {
     price: product.price,
     quantity,
     image: product.images?.[0]?.url || '',
+    variantId: variantId,
   });
 
   res.status(200).json({ success: true, data: cart });
 };
 
 // ─── Update Item Quantity ───────────────────────────────
-export const updateQuantity = async (req: Request<{ productId: string }>, res: Response): Promise<void> => {
-  const { productId } = req.params;
+export const updateQuantity = async (req: Request<{ variantId: string }>, res: Response): Promise<void> => {
+  const { variantId } = req.params;
   const { quantity } = req.body;
 
   const cart = await cartRepository.updateQuantity(
     req.user!.id,
-    productId,
+    variantId,
     quantity
   );
 
@@ -62,10 +64,10 @@ export const updateQuantity = async (req: Request<{ productId: string }>, res: R
 };
 
 // ─── Remove Item from Cart ──────────────────────────────
-export const removeItem = async (req: Request<{ productId: string }>, res: Response): Promise<void> => {
-  const { productId } = req.params;
+export const removeItem = async (req: Request<{ variantId: string }>, res: Response): Promise<void> => {
+  const { variantId } = req.params;
 
-  const cart = await cartRepository.removeItem(req.user!.id, productId);
+  const cart = await cartRepository.removeItem(req.user!.id, variantId);
 
   res.status(200).json({ success: true, data: cart });
 };

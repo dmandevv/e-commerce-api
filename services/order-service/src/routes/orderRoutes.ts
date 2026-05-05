@@ -3,14 +3,14 @@ import { placeOrder, getOrder, getMyOrders, updateStatus } from '../controllers/
 import { authenticate, authorize } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { validate } from '@ecommerce/shared/middleware';
-import { updateStatusSchema } from '../schemas/orderSchemas.js';
+import { placeOrderSchema, updateStatusSchema } from '../schemas/orderSchemas.js';
 import { sanitizeBody } from '@ecommerce/shared/middleware';
 
 const router = Router();
 
 router.use(authenticate);
 
-router.post('/', asyncHandler(placeOrder));
+router.post('/', validate(placeOrderSchema), asyncHandler(placeOrder));
 router.get('/mine', asyncHandler(getMyOrders));
 router.get('/:id', asyncHandler(getOrder));
 

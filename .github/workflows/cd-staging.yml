@@ -55,6 +55,42 @@ jobs:
           cache-from: type=registry,ref=ghcr.io/${{ github.repository }}/${{ matrix.service }}:buildcache
           cache-to: type=registry,ref=ghcr.io/${{ github.repository }}/${{ matrix.service }}:buildcache,mode=max
 
+
+
+  # ─── Run Prisma migrations ──────────────────────────────
+  migrate:
+    name: Run DB Migrations
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Migrate order-service
+        working-directory: services/order-service
+        run: |
+          echo "DATABASE_URL=${{ secrets.ORDER_DATABASE_URL }}" > .env
+          npm install prisma --no-save
+          npx prisma migrate deploy
+          rm .env
+
+      - name: Migrate payment-service
+        working-directory: services/payment-service
+        run: |
+          echo "DATABASE_URL=${{ secrets.PAYMENT_DATABASE_URL }}" > .env
+          npm install prisma --no-save
+          npx prisma migrate deploy
+          rm .env
+
+ 
+
+
   # ─── Deploy to ecommerce-staging namespace ─────────────
   # WHY kubectl apply -k on every deploy:
   # The first deploy creates the namespace and all resources.
@@ -64,7 +100,7 @@ jobs:
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
-    needs: build-and-push
+    needs: [build-and-push, migrate]
 
     steps:
       - name: Checkout code

@@ -111,7 +111,7 @@ const fakeProduct = {
   name: 'Test Headphones',
   description: 'Noise cancelling headphones',
   price: 299.99,
-  stock: 10,
+  variants: [{ _id: { toString: () => 'var1' }, sku: 'HEAD-BLK', attributes: { color: 'black' }, stock: 10, reservedStock: 0 }],
   category: 'Electronics',
   images: [{ publicId: 'img1', url: 'https://cdn.test/img1.jpg' }],
   reviews: [] as { userId: string; name: string; rating: number; comment: string; _id: { toString: () => string } }[],
@@ -221,7 +221,6 @@ describe('POST /api/products', () => {
     name: 'New Keyboard',
     description: 'Mechanical keyboard',
     price: 149.99,
-    stock: 25,
     category: 'Electronics',
   };
 
@@ -230,7 +229,7 @@ describe('POST /api/products', () => {
     mockProduct.create.mockResolvedValue({ ...fakeProduct, ...newProduct });
     const res = await withCsrf(request(app).post('/api/products'))
       .set('Authorization', `Bearer ${adminToken}`)
-      .send(newProduct)
+      .send({ ...fakeProduct, ...newProduct })
     expect(mockCache.cacheDelPattern).toHaveBeenCalledWith('list:*');
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);

@@ -5,6 +5,7 @@ import { addItemSchema, updateQuantitySchema } from "./cartSchemas.js";
 describe("addItemSchema", () => {
     const validItem = {
       productId: "507f1f77bcf86cd799439011",
+      variantId: 'v1',
       quantity: 2
     }
     it("should accept valid productId and quantity", () => {
@@ -15,31 +16,31 @@ describe("addItemSchema", () => {
        }
     });
     it("should reject when missing productId", () => {
-        const result = addItemSchema.safeParse({ quantity: 1 });
+        const result = addItemSchema.safeParse({ quantity: 1, variantId: 'v1' });
         expect(result.success).toBe(false);
     });
-    it("should reject when missing productId is empty", () => {
-        const result = addItemSchema.safeParse({ productId: "" });
+    it("should reject when productId is empty", () => {
+        const result = addItemSchema.safeParse({ productId: "", variantId: 'v1' });
         expect(result.success).toBe(false);
     });
     it("should reject when missing quantity", () => {
-        const result = addItemSchema.safeParse({ productId: "abc123" });
+        const result = addItemSchema.safeParse({ productId: "abc123", variantId: 'v1' });
         expect(result.success).toBe(false);
     });
     it("should reject when quantity is 0", () => {
-        const result = addItemSchema.safeParse({ productId: "abc123", quantity: 0 });
+        const result = addItemSchema.safeParse({ productId: "abc123", quantity: 0, variantId: 'v1' });
         expect(result.success).toBe(false);
     });
     it("should reject when quantity is negative", () => {
-        const result = addItemSchema.safeParse({ productId: "abc123", quantity: -1 });
+        const result = addItemSchema.safeParse({ productId: "abc123", quantity: -1, variantId: 'v1' });
         expect(result.success).toBe(false);
     });
     it("should reject non-integer quantity", () => {
-        const result = addItemSchema.safeParse({ productId: "abc123", quantity: 1.5 });
+        const result = addItemSchema.safeParse({ productId: "abc123", quantity: 1.5, variantId: 'v1' });
         expect(result.success).toBe(false);
     });
     it("should accept the minimum quantity", () => {
-        const result = addItemSchema.safeParse({ productId: "abc123", quantity: 1 });
+        const result = addItemSchema.safeParse({ productId: "abc123", quantity: 1, variantId: 'v1' });
         expect(result.success).toBe(true);
     });
 });

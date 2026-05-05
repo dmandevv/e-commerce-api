@@ -17,6 +17,7 @@ data:
   # Format: http://<service-name>.<namespace>.svc.cluster.local:<port>
   # The short form (http://product-service:3002) also works when pods
   # are in the same namespace, which they are here.
+  USER_SERVICE_URL: "http://user-service:3001"
   PRODUCT_SERVICE_URL: "http://product-service:3002"
   CART_SERVICE_URL: "http://cart-service:3003"
 

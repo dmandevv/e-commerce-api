@@ -38,8 +38,21 @@ export interface UserRegisteredEvent {
 export interface OrderPlacedEvent {
   orderId: string;
   userId: string;
-  items: Array<{ productId: string; quantity: number; price: number }>;
+  items: Array<{
+    productId: string;
+    variantId: string; // needed so product-service knows which variant to reserve
+    quantity: number;
+    price: number 
+  }>;
   total: number;
+  shippingAddress: { // snapshot of IAddress - same as IOrder
+    name: string;
+    street: string;
+    city: string;
+    province: string;
+    postalCode: string;
+    country: string;
+  }
   timestamp: Date;
 }
 
@@ -55,6 +68,7 @@ export interface PaymentCompletedEvent {
   userId: string;
   stripePaymentId: string;
   amount: number;
+  items: Array<{ variantId: string; quantity: number }>;
   timestamp: Date;
 }
 
@@ -62,6 +76,7 @@ export interface PaymentFailedEvent {
   orderId: string;
   userId: string;
   reason: string;
+  items: Array<{ variantId: string; quantity: number }>;
   timestamp: Date;
 }
 

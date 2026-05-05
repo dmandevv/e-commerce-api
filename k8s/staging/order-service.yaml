@@ -64,6 +64,11 @@ spec:
                 configMapKeyRef:
                   name: ecommerce-config
                   key: CART_SERVICE_URL
+            - name: USER_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: ecommerce-config
+                  key: USER_SERVICE_URL
           resources:
             requests:
               cpu: 30m

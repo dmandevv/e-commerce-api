@@ -81,7 +81,7 @@ const customerToken = createToken('user1', 'customer');
 const fakeCart = {
   userId: 'userId',
   items: [
-    { productId: 'productId', name: 'name', price: 0, quantity: 0, image: 'image' },
+    { productId: 'productId', name: 'name', price: 0, quantity: 0, image: 'image', variantId: 'v1' },
   ],
   total: 0,
 };
@@ -132,7 +132,7 @@ describe('POST /api/cart/items', () => {
     vi.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
       json: async () => ({
-        data: { name: 'Test Headphones', price: 299.99, stock: 10, images: [{ url: 'https://cdn.test/img.jpg' }] },
+        data: { name: 'Test Headphones', price: 299.99, images: [{ url: 'https://cdn.test/img.jpg' }], variants: [{ id: 'v1', stock: 10, reservedStock: 0 }] },
       }),
     } as Response);
 
@@ -140,7 +140,7 @@ describe('POST /api/cart/items', () => {
 
     const res = await withCsrf(request(app).post('/api/cart/items'))
       .set('Authorization', `Bearer ${customerToken}`)
-      .send({ productId: 'prod1', quantity: 1 });
+      .send({ productId: 'prod1', variantId: 'v1', quantity: 1 });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -150,6 +150,7 @@ describe('POST /api/cart/items', () => {
       price: 299.99,
       quantity: 1,
       image: 'https://cdn.test/img.jpg',
+      variantId: 'v1',
     });
   });
 
@@ -166,7 +167,7 @@ describe('POST /api/cart/items', () => {
 
     const res = await withCsrf(request(app).post('/api/cart/items'))
       .set('Authorization', `Bearer ${customerToken}`)
-      .send({ productId: 'prod1', quantity: 1 });
+      .send({ productId: 'prod1', variantId: 'v1', quantity: 1 });
 
     expect(res.status).toBe(404);
     expect(res.body.message).toBe('Product not found');
@@ -179,13 +180,13 @@ describe('POST /api/cart/items', () => {
     vi.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
       json: async () => ({
-        data: { name: 'Test Headphones', price: 299.99, stock: 1, images: [{ url: 'https://cdn.test/img.jpg' }] },
+        data: { name: 'Test Headphones', price: 299.99, images: [{ url: 'https://cdn.test/img.jpg' }], variants: [{ id: 'v1', stock: 1, reservedStock: 0 }] },
       }),
     } as Response);
 
     const res = await withCsrf(request(app).post('/api/cart/items'))
       .set('Authorization', `Bearer ${customerToken}`)
-      .send({ productId: 'prod1', quantity: 10 });
+      .send({ productId: 'prod1', variantId: 'v1', quantity: 10 });
 
     expect(res.status).toBe(400);
     expect(res.body.message).toBe('Only 1 items in stock');
@@ -203,6 +204,11 @@ describe('POST /api/cart/items', () => {
         expect.objectContaining(
         {
           field: 'productId',
+          message: "Invalid input: expected string, received undefined",
+        }),
+        expect.objectContaining(
+        {
+          field: 'variantId',
           message: "Invalid input: expected string, received undefined",
         }),
         expect.objectContaining({

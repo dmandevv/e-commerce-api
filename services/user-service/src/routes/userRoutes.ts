@@ -3,10 +3,12 @@ import {
     register, login, getProfile, getUserById, refresh, logout, getCsrfToken, 
     verifyEmail, requestVerificationEmail, forgotPassword, resetPassword
 } from '../controllers/userController.js';
+import { addAddress, updateAddress, deleteAddress} from '../controllers/addressController.js';
 import { authenticate } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { validate, sanitizeBody } from '@ecommerce/shared/middleware';
 import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from '../schemas/userSchemas.js';
+import { createAddressSchema, updateAddressSchema, addressParamsSchema } from '../schemas/addressSchemas.js';
 
 const router = Router();
 
@@ -29,5 +31,8 @@ router.get('/internal/:id', asyncHandler(getUserById));
 // Protected routes
 router.get('/profile', authenticate, asyncHandler(getProfile));
 router.post('/verify-email/request', authenticate, asyncHandler(requestVerificationEmail));
+router.post('/addresses', authenticate, validate(createAddressSchema), asyncHandler(addAddress));
+router.put('/addresses/:addressId', authenticate, validate(updateAddressSchema), asyncHandler(updateAddress));
+router.delete('/addresses/:addressId', authenticate, validate(addressParamsSchema, 'params'), asyncHandler(deleteAddress));
 
 export default router;

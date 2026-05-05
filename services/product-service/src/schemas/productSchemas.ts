@@ -1,11 +1,20 @@
 import { z, PRODUCT_CATEGORIES } from '@ecommerce/shared';
 
+const variantSchema = z.object({
+  sku: z.string().min(1, 'SKU is required'),
+  attributes: z.record(z.string(), z.string()).default({}),
+  stock: z.number().int().min(0).default(0),
+  reservedStock: z.number().int().min(0).default(0),
+  price: z.number().min(0).optional(),
+});
+
+
 export const createProductSchema = z.object({
   name: z.string().min(1, 'Please enter product name'),
   description: z.string().min(1, 'Please enter product description'),
   price: z.number().min(0, 'Price cannot be negative'),
   category: z.enum(PRODUCT_CATEGORIES, { message: 'Please select correct category' }),
-  stock: z.number().int().min(0, 'Stock cannot be negative').default(0),
+  variants: z.array(variantSchema).min(1, 'Product must have at least one variant'),
   images: z.array(z.object({
     publicId: z.string(),
     url: z.string().url(),

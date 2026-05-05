@@ -84,7 +84,8 @@ describe('POST /api/orders', () => {
     mockOrderService.placeOrder.mockResolvedValue(fakeOrder);
 
     const res = await withCsrf(request(app).post('/api/orders'))
-      .set('Authorization', `Bearer ${customerToken}`);
+      .set('Authorization', `Bearer ${customerToken}`)
+      .send({ addressId: 'addr1' });
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
@@ -92,6 +93,7 @@ describe('POST /api/orders', () => {
     // placeOrder receives: (userId, token, requestId)
     expect(mockOrderService.placeOrder).toHaveBeenCalledWith(
       'user1',
+      'addr1',
       customerToken,
       expect.any(String), // requestId (generated UUID)
     );
