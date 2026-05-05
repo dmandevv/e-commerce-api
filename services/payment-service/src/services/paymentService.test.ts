@@ -72,6 +72,7 @@ const payment = {
     amount: 50,
     stripePaymentId: "pi_123",
     stripeClientSecret: "secret_123",
+    items: [],
     status: "PENDING",
     failureReason: null,
     createdAt: new Date(),
@@ -95,6 +96,7 @@ describe("createPaymentForOrder", () => {
                 amount: 50,
                 stripePaymentId: "pi_123",
                 stripeClientSecret: "secret_123",
+                items: [],
             },
         });
     });

@@ -37,6 +37,7 @@ export async function createPaymentForOrder(event: OrderPlacedEvent): Promise<vo
       amount: event.total,
       stripePaymentId: paymentIntent.id,
       stripeClientSecret: paymentIntent.client_secret,
+      items: event.items.map(i => ({ variantId: i.variantId, quantity: i.quantity })),
     },
   });
 
@@ -77,6 +78,7 @@ export async function handleStripeWebhook(event: Stripe.Event): Promise<void> {
         userId: payment.userId,
         stripePaymentId: paymentIntent.id,
         amount: Number(payment.amount),
+        items: payment.items as Array<{ variantId: string; quantity: number }>,
         timestamp: new Date(),
       };
 
@@ -100,6 +102,7 @@ export async function handleStripeWebhook(event: Stripe.Event): Promise<void> {
         orderId: payment.orderId,
         userId: payment.userId,
         reason: payment.failureReason || 'Unknown error',
+        items: payment.items as Array<{ variantId: string; quantity: number }>,
         timestamp: new Date(),
       };
 
