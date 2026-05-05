@@ -207,6 +207,7 @@ run_curl "$BASE_URL/api/products"
 check "GET /api/products  (list)" "200"
 
 PRODUCT_ID=$(echo "$BODY" | grep -o '"_id":"[^"]*"' | head -1 | cut -d'"' -f4 || true)
+VARIANT_ID=""
 
 if [[ -z "$PRODUCT_ID" ]]; then
   echo -e "  ${YELLOW}⚠${NC}  Product catalogue empty — Phases 4 & 5 skipped"
@@ -217,6 +218,8 @@ else
   run_curl "$BASE_URL/api/products/$PRODUCT_ID"
   check "GET /api/products/:id  (single)" "200"
   info "$(echo "$BODY" | grep -o '"name":"[^"]*"' | head -1)"
+  VARIANT_ID=$(echo "$BODY" | grep -o '"_id":"[^"]*"' | sed -n '2p' | cut -d'"' -f4 || true)
+  info "First variant ID: ${VARIANT_ID:-<none>}"
 fi
 
 # ═════════════════════════════════════════════════════════
@@ -224,8 +227,8 @@ fi
 # ═════════════════════════════════════════════════════════
 phase 4 "Cart"
 
-if [[ -z "$PRODUCT_ID" ]]; then
-  echo -e "  ${YELLOW}⚠${NC}  Skipped (no products)"
+if [[ -z "$PRODUCT_ID" ]] || [[ -z "$VARIANT_ID" ]]; then
+  echo -e "  ${YELLOW}⚠${NC}  Skipped (no products or variants)"
 else
   run_curl -b "$COOKIE_JAR" "$BASE_URL/api/cart"
   check "GET /api/cart  (empty)" "200"
@@ -233,18 +236,18 @@ else
   mut_curl -X POST "$BASE_URL/api/cart/items" \
     -H "Content-Type: application/json" \
     -b "$COOKIE_JAR" \
-    -d "{\"productId\":\"$PRODUCT_ID\",\"quantity\":2}"
+    -d "{\"productId\":\"$PRODUCT_ID\",\"variantId\":\"$VARIANT_ID\",\"quantity\":2}"
   check "POST /api/cart/items  (add, qty=2)" "200"
 
   run_curl -b "$COOKIE_JAR" "$BASE_URL/api/cart"
   check "GET /api/cart  (1 item)" "200"
   info "$(echo "$BODY" | grep -o '"items":\[[^]]*\]' | head -c 120)"
 
-  mut_curl -X PATCH "$BASE_URL/api/cart/items/$PRODUCT_ID" \
+  mut_curl -X PATCH "$BASE_URL/api/cart/items/$VARIANT_ID" \
     -H "Content-Type: application/json" \
     -b "$COOKIE_JAR" \
     -d '{"quantity":1}'
-  check "PATCH /api/cart/items/:id  (update qty=1)" "200"
+  check "PATCH /api/cart/items/:variantId  (update qty=1)" "200"
 fi
 
 # ═════════════════════════════════════════════════════════

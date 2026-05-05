@@ -53,7 +53,10 @@ const products = [
     description: 'Industry-leading noise cancellation with Auto NC Optimizer, crystal-clear hands-free calling, and up to 30 hours of battery life.',
     price: 348.0,
     category: 'Electronics',
-    stock: 45,
+    variants: [
+      { sku: 'SONY-XM5-BLK', attributes: { color: 'Black' }, stock: 30, reservedStock: 0 },
+      { sku: 'SONY-XM5-SLV', attributes: { color: 'Silver' }, stock: 15, reservedStock: 0 },
+    ],
     rating: 4.7,
     numOfReviews: 3,
     reviews: [
@@ -67,7 +70,7 @@ const products = [
     description: 'Full-frame mirrorless camera with 24.2 MP sensor, 4K 60p video, and subject detection AF. Perfect for photos and video.',
     price: 2499.0,
     category: 'Electronics',
-    stock: 12,
+    variants: [{ sku: 'CANON-R6II-BODY', attributes: {}, stock: 12, reservedStock: 0 }],
     rating: 4.8,
     numOfReviews: 2,
     reviews: [
@@ -80,7 +83,10 @@ const products = [
     description: '16-inch Liquid Retina XDR display, M3 Pro chip, 18GB unified memory, 512GB SSD. Built for professional workflows.',
     price: 2499.0,
     category: 'Computers',
-    stock: 20,
+    variants: [
+      { sku: 'MBP16-M3PRO-18-512', attributes: { memory: '18GB', storage: '512GB' }, stock: 12, reservedStock: 0 },
+      { sku: 'MBP16-M3PRO-36-512', attributes: { memory: '36GB', storage: '512GB' }, stock: 8, reservedStock: 0 },
+    ],
     rating: 4.9,
     numOfReviews: 2,
     reviews: [
@@ -93,7 +99,10 @@ const products = [
     description: 'Wireless ergonomic mouse with 8K DPI tracking, quiet clicks, and MagSpeed scroll wheel. Works on any surface.',
     price: 99.99,
     category: 'Electronics',
-    stock: 150,
+    variants: [
+      { sku: 'MX-MASTER-3S-GRY', attributes: { color: 'Graphite' }, stock: 80, reservedStock: 0 },
+      { sku: 'MX-MASTER-3S-WHT', attributes: { color: 'Pale Grey' }, stock: 70, reservedStock: 0 },
+    ],
     rating: 4.6,
     numOfReviews: 4,
     reviews: [
@@ -108,7 +117,10 @@ const products = [
     description: 'Titanium build, 200MP camera, S Pen built-in, Snapdragon 8 Gen 3, 5000mAh battery. The ultimate Android phone.',
     price: 1299.99,
     category: 'Electronics',
-    stock: 30,
+    variants: [
+      { sku: 'S24U-256-BLK', attributes: { color: 'Titanium Black', storage: '256GB' }, stock: 15, reservedStock: 0 },
+      { sku: 'S24U-512-VIO', attributes: { color: 'Titanium Violet', storage: '512GB' }, stock: 15, reservedStock: 0 },
+    ],
     rating: 4.5,
     numOfReviews: 3,
     reviews: [
@@ -122,7 +134,7 @@ const products = [
     description: '33MP full-frame sensor, 4K 60p, real-time Eye AF, 10fps burst shooting. The hybrid camera for stills and video.',
     price: 2498.0,
     category: 'Electronics',
-    stock: 8,
+    variants: [{ sku: 'SONY-A7IV-BODY', attributes: {}, stock: 8, reservedStock: 0 }],
     rating: 4.7,
     numOfReviews: 1,
     reviews: [
@@ -134,7 +146,10 @@ const products = [
     description: '14-inch 2.8K OLED display, Intel i7-1365U, 16GB RAM, 512GB SSD. 2.48 lbs. The business ultrabook standard.',
     price: 1649.0,
     category: 'Computers',
-    stock: 25,
+    variants: [
+      { sku: 'X1C-I7-16-512', attributes: { memory: '16GB', storage: '512GB' }, stock: 15, reservedStock: 0 },
+      { sku: 'X1C-I7-32-1TB', attributes: { memory: '32GB', storage: '1TB' }, stock: 10, reservedStock: 0 },
+    ],
     rating: 4.4,
     numOfReviews: 2,
     reviews: [
@@ -147,7 +162,7 @@ const products = [
     description: 'Active noise cancellation, adaptive transparency, personalized spatial audio, MagSafe charging case with speaker and lanyard loop.',
     price: 249.0,
     category: 'Electronics',
-    stock: 100,
+    variants: [{ sku: 'APP2-WHT', attributes: { color: 'White' }, stock: 100, reservedStock: 0 }],
     rating: 4.6,
     numOfReviews: 3,
     reviews: [
@@ -161,7 +176,10 @@ const products = [
     description: 'Wireless 75% layout, Gateron Jupiter Brown switches, QMK/VIA compatible, full aluminum body, hot-swappable.',
     price: 199.0,
     category: 'Electronics',
-    stock: 60,
+    variants: [
+      { sku: 'Q1PRO-BRN-BLK', attributes: { switch: 'Brown', color: 'Black' }, stock: 30, reservedStock: 0 },
+      { sku: 'Q1PRO-RED-BLK', attributes: { switch: 'Red', color: 'Black' }, stock: 30, reservedStock: 0 },
+    ],
     rating: 4.8,
     numOfReviews: 2,
     reviews: [
@@ -174,7 +192,10 @@ const products = [
     description: 'Single-origin Peruvian dark roast. Fair trade, USDA organic. Rich chocolate and caramel notes with low acidity.',
     price: 24.99,
     category: 'Food & Grocery',
-    stock: 200,
+    variants: [
+      { sku: 'COFFEE-DARK-1LB', attributes: { size: '1 lb' }, stock: 120, reservedStock: 0 },
+      { sku: 'COFFEE-DARK-2LB', attributes: { size: '2 lb' }, stock: 80, reservedStock: 0 },
+    ],
     rating: 4.3,
     numOfReviews: 2,
     reviews: [
@@ -216,7 +237,7 @@ async function seed() {
     description: String,
     price: Number,
     category: String,
-    stock: Number,
+    variants: [{ sku: String, attributes: Map, stock: Number, reservedStock: { type: Number, default: 0 }, price: Number }],
     images: [{ publicId: String, url: String }],
     reviews: [{ userId: String, name: String, rating: Number, comment: String }],
     rating: { type: Number, default: 0 },
