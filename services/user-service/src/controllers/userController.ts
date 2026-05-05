@@ -157,6 +157,7 @@ export const getUserById = async (req: Request, res: Response): Promise<void> =>
       id: user._id.toString(),
       name: user.name,
       email: user.email,
+      addresses: user.addresses,
     },
   });
 };
