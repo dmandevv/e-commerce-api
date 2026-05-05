@@ -5,7 +5,12 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { apiFetch } from "@/lib/api";
-import type { Product } from "@/components/ProductCard";
+import type { Product, Variant } from "@/components/ProductCard";
+
+function variantLabel(v: Variant): string {
+  const attrs = Object.values(v.attributes);
+  return attrs.length > 0 ? attrs.join(" / ") : v.sku;
+}
 import AddToCartButton from "./AddToCartButton";
 import StarRating from "./StarRating";
 import ReviewSection from "./ReviewSection";
@@ -26,13 +31,17 @@ const categoryEmoji: Record<string, string> = {
 export default function ProductPage() {
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     apiFetch<ProductResponse>(`/api/products/${id}`)
-      .then((res) => setProduct(res.data))
+      .then((res) => {
+        setProduct(res.data);
+        setSelectedVariant(res.data.variants?.[0] ?? null);
+      })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [id]);
@@ -136,16 +145,46 @@ export default function ProductPage() {
               {/* Price */}
               <div className="mb-4">
                 <span className="text-sm text-muted-foreground">Price:</span>
-                <div className="flex items-baseline gap-0.5">
-                  <span className="text-sm align-top mt-1">$</span>
-                  <span className="text-3xl font-light text-[#0f1111]">
-                    {Math.floor(product.price)}
-                  </span>
-                  <span className="text-sm align-top mt-1">
-                    {(product.price % 1).toFixed(2).substring(1)}
-                  </span>
-                </div>
+                {(() => {
+                  const displayPrice = selectedVariant?.price ?? product.price;
+                  return (
+                    <div className="flex items-baseline gap-0.5">
+                      <span className="text-sm align-top mt-1">$</span>
+                      <span className="text-3xl font-light text-[#0f1111]">
+                        {Math.floor(displayPrice)}
+                      </span>
+                      <span className="text-sm align-top mt-1">
+                        {(displayPrice % 1).toFixed(2).substring(1)}
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
+
+              {/* Variant selector */}
+              {product.variants?.length > 1 && (
+                <div className="mb-4">
+                  <span className="text-sm font-medium text-[#0f1111] block mb-2">Option:</span>
+                  <div className="flex flex-wrap gap-2">
+                    {product.variants.map((v) => (
+                      <button
+                        key={v._id}
+                        onClick={() => setSelectedVariant(v)}
+                        className={`px-3 py-1.5 text-sm rounded border transition-colors ${
+                          selectedVariant?._id === v._id
+                            ? "border-[#e77600] bg-[#fff3e0] text-[#0f1111] shadow-[0_0_0_3px_rgba(228,121,17,0.5)]"
+                            : "border-[#d5d9d9] bg-white text-[#0f1111] hover:border-[#007185]"
+                        }`}
+                      >
+                        {variantLabel(v)}
+                        {v.price != null && v.price !== product.price && (
+                          <span className="ml-1 text-[#555]">(${v.price.toFixed(2)})</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Description */}
               <div className="mb-6">
@@ -172,13 +211,18 @@ export default function ProductPage() {
                         Availability
                       </td>
                       <td className="px-4 py-2">
-                        {product.stock > 0 ? (
-                          <span className="text-[#007600]">
-                            In Stock ({product.stock} available)
-                          </span>
-                        ) : (
-                          <span className="text-destructive">Out of Stock</span>
-                        )}
+                        {(() => {
+                          const available = selectedVariant
+                            ? selectedVariant.stock - selectedVariant.reservedStock
+                            : product.stock;
+                          return available > 0 ? (
+                            <span className="text-[#007600]">
+                              In Stock ({available} available)
+                            </span>
+                          ) : (
+                            <span className="text-destructive">Out of Stock</span>
+                          );
+                        })()}
                       </td>
                     </tr>
                     <tr>
@@ -196,8 +240,9 @@ export default function ProductPage() {
               {/* Add to cart */}
               <AddToCartButton
                 productId={product._id}
-                inStock={product.stock > 0}
-                stock={product.stock}
+                variantId={selectedVariant?._id ?? ""}
+                inStock={selectedVariant ? (selectedVariant.stock - selectedVariant.reservedStock) > 0 : product.stock > 0}
+                stock={selectedVariant ? selectedVariant.stock - selectedVariant.reservedStock : product.stock}
               />
             </div>
           </div>

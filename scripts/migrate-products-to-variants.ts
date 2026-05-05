@@ -44,7 +44,7 @@ async function migrate() {
 
     await Product.findByIdAndUpdate(product._id, {
       $set: {
-        variants: [{ sku, attributes: {}, stock, reservedStock: 0 }],
+        variants: [{ sku, attributes: {}, stock, reservedStock: 0, price: (product as any).price }],
       },
     });
 

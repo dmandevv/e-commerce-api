@@ -31,7 +31,7 @@ interface CartContextType {
   cart: ICart | null;
   cartCount: number;
   loading: boolean;
-  addItem: (productId: string, quantity: number) => Promise<void>;
+  addItem: (productId: string, variantId: string, quantity: number) => Promise<void>;
   removeItem: (productId: string) => Promise<void>;
   updateQuantity: (productId: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -79,7 +79,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // ─── Optimistic mutations ───────────────────────────────
 
-  const addItem = async (productId: string, quantity: number) => {
+  const addItem = async (productId: string, variantId: string, quantity: number) => {
     if (!isAuthenticated) return;
 
     // Snapshot current state
@@ -119,7 +119,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         "/api/cart/items",
         {
           method: "POST",
-          body: JSON.stringify({ productId, quantity }),
+          body: JSON.stringify({ productId, variantId, quantity }),
         }
       );
       setCart(res.data); // Set from server response (source of truth)

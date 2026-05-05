@@ -30,6 +30,15 @@ const categoryEmoji: Record<string, string> = {
   "Video Games": "🕹️",
 };
 
+export interface Variant {
+  _id: string;
+  sku: string;
+  attributes: Record<string, string>;
+  stock: number;
+  reservedStock: number;
+  price?: number;
+}
+
 export interface Product {
   _id: string;
   name: string;
@@ -41,6 +50,7 @@ export interface Product {
   numOfReviews: number;
   images: { publicId: string; url: string }[];
   reviews: Review[];
+  variants: Variant[];
   createdAt: string;
 }
 
