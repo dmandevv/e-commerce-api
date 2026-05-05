@@ -14,6 +14,7 @@ data:
   HEALTH_SERVICE_PORT: "3007"
 
   # Inter-service URLs (Kubernetes DNS)
+  USER_SERVICE_URL: "http://user-service:3001"
   PRODUCT_SERVICE_URL: "http://product-service:3002"
   CART_SERVICE_URL: "http://cart-service:3003"
 
