@@ -32,7 +32,7 @@ export const addItem = async (req: Request, res: Response): Promise<void> => {
 
   const { data: product } = await productRes.json();
 
-  const variant = product.variants.find((v: any) => v.id === variantId);
+  const variant = product.variants.find((v: any) => (v._id ?? v.id)?.toString() === variantId);
   if (!variant) throw new NotFoundError('Variant');
   const available = variant.stock - variant.reservedStock;
   if (available < quantity) throw new ValidationError(`Only ${available} items in stock`);

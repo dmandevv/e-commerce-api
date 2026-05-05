@@ -54,7 +54,7 @@ export async function placeOrder(userId: string, addressId: string, token: strin
 
       const { data: product } = await res.json();
 
-      const variant = product.variants.find((v: any) => v.id === item.variantId);
+      const variant = product.variants.find((v: any) => (v._id ?? v.id)?.toString() === item.variantId);
       if (!variant) throw new ValidationError(`Variant for "${item.name}" not found`);
       const available = variant.stock - variant.reservedStock;
       if (available < item.quantity) { throw new ValidationError(

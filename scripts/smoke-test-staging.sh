@@ -258,9 +258,18 @@ phase 5 "Orders"
 if [[ -z "$PRODUCT_ID" ]]; then
   echo -e "  ${YELLOW}⚠${NC}  Skipped (no products)"
 else
+  mut_curl -X POST "$BASE_URL/api/users/addresses" \
+    -H "Content-Type: application/json" \
+    -b "$COOKIE_JAR" \
+    -d '{"label":"Home","street":"123 Test St","city":"Toronto","province":"Ontario","postalCode":"M5V 3A8","country":"Canada"}'
+  check "POST /api/users/addresses  (create)" "201"
+  ADDRESS_ID=$(echo "$BODY" | grep -o '"_id":"[^"]*"' | head -1 | cut -d'"' -f4 || true)
+  info "Address ID: ${ADDRESS_ID:-<not found>}"
+
   mut_curl -X POST "$BASE_URL/api/orders" \
     -H "Content-Type: application/json" \
-    -b "$COOKIE_JAR"
+    -b "$COOKIE_JAR" \
+    -d "{\"addressId\":\"$ADDRESS_ID\"}"
   check "POST /api/orders  (place)" "201"
 
   ORDER_ID=$(echo "$BODY" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4 || true)
