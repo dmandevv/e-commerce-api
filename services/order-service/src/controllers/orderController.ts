@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import * as orderService from '../services/orderService.js';
 
 export const placeOrder = async (req: Request, res: Response): Promise<void> => {
-  const token = req.headers.authorization!.split(' ')[1];
+  const token = req.headers.authorization?.split(' ')[1] ?? req.cookies?.accessToken;
   const order = await orderService.placeOrder(req.user!.id, req.body.addressId, token, req.requestId);
 
   res.status(201).json({ success: true, data: order });
