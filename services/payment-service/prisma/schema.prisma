@@ -15,16 +15,17 @@ enum PaymentStatus {
 }
 
 model Payment {
-  id                String        @id @default(uuid())
-  orderId           String        @unique
-  userId            String
-  amount            Decimal       @db.Decimal(10, 2)
-  status            PaymentStatus @default(PENDING)
-  stripePaymentId   String?       @unique
+  id                 String        @id @default(uuid())
+  orderId            String        @unique
+  userId             String
+  amount             Decimal       @db.Decimal(10, 2)
+  status             PaymentStatus @default(PENDING)
+  stripePaymentId    String?       @unique
   stripeClientSecret String?
-  failureReason     String?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  failureReason      String?
+  items              Json          @default("[]")
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
   @@index([userId])
   @@index([orderId])

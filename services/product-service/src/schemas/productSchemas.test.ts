@@ -14,12 +14,14 @@ import {
 describe("createProductSchema", () => {
   // A valid product body — all required fields present with correct types.
   // This is the "happy path" baseline that all other tests compare against.
+  const validVariant = { sku: "MOUSE-BLK-M", stock: 50, attributes: { color: "black" } };
+
   const validProduct = {
     name: "Wireless Mouse",
     description: "A comfortable wireless mouse with ergonomic design",
     price: 29.99,
     category: "Electronics",
-    stock: 50,
+    variants: [validVariant],
   };
 
   it("should accept a valid product body", () => {
@@ -37,16 +39,11 @@ describe("createProductSchema", () => {
     }
   });
 
-  it("should default stock to 0 when not provided", () => {
-    // stock has .default(0) in the schema — if omitted, Zod fills it in.
-    // This is useful for admin UIs where stock might be set later.
-    const { stock, ...productWithoutStock } = validProduct;
-    const result = createProductSchema.safeParse(productWithoutStock);
+  it("should reject when variants array is empty", () => {
+    // .min(1) on the variants array — a product must have at least one variant
+    const result = createProductSchema.safeParse({ ...validProduct, variants: [] });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.stock).toBe(0);
-    }
+    expect(result.success).toBe(false);
   });
 
   it("should reject when name is missing", () => {
@@ -102,21 +99,19 @@ describe("createProductSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("should reject negative stock", () => {
-    // You can't have -5 items in a warehouse
+  it("should reject variant with negative stock", () => {
     const result = createProductSchema.safeParse({
       ...validProduct,
-      stock: -5,
+      variants: [{ ...validVariant, stock: -5 }],
     });
 
     expect(result.success).toBe(false);
   });
 
-  it("should reject non-integer stock", () => {
-    // .int() ensures whole numbers only — you can't have 2.5 items in stock
+  it("should reject variant with missing sku", () => {
     const result = createProductSchema.safeParse({
       ...validProduct,
-      stock: 2.5,
+      variants: [{ stock: 10, attributes: {} }],
     });
 
     expect(result.success).toBe(false);

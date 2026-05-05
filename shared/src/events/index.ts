@@ -68,6 +68,7 @@ export interface PaymentCompletedEvent {
   userId: string;
   stripePaymentId: string;
   amount: number;
+  items: Array<{ variantId: string; quantity: number }>;
   timestamp: Date;
 }
 
@@ -75,6 +76,7 @@ export interface PaymentFailedEvent {
   orderId: string;
   userId: string;
   reason: string;
+  items: Array<{ variantId: string; quantity: number }>;
   timestamp: Date;
 }
 
