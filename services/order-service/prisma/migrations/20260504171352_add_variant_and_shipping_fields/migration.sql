@@ -11,12 +11,12 @@
 
 */
 -- AlterTable
-ALTER TABLE "order_items" ADD COLUMN     "variantId" TEXT NOT NULL;
+ALTER TABLE "order_items" ADD COLUMN     "variantId" TEXT;
 
 -- AlterTable
-ALTER TABLE "orders" ADD COLUMN     "shippingCity" TEXT NOT NULL,
-ADD COLUMN     "shippingCountry" TEXT NOT NULL,
-ADD COLUMN     "shippingName" TEXT NOT NULL,
-ADD COLUMN     "shippingPostal" TEXT NOT NULL,
-ADD COLUMN     "shippingProvince" TEXT NOT NULL,
-ADD COLUMN     "shippingStreet" TEXT NOT NULL;
+ALTER TABLE "orders" ADD COLUMN     "shippingCity" TEXT,
+ADD COLUMN     "shippingCountry" TEXT,
+ADD COLUMN     "shippingName" TEXT,
+ADD COLUMN     "shippingPostal" TEXT,
+ADD COLUMN     "shippingProvince" TEXT,
+ADD COLUMN     "shippingStreet" TEXT;
