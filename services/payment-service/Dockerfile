@@ -42,4 +42,4 @@ WORKDIR /app/services/payment-service
 EXPOSE 3005
 
 # Run pending migrations then start the app
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/server.js"]
+CMD ["node", "dist/src/server.js"]
