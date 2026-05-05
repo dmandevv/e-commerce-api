@@ -128,7 +128,7 @@ export async function placeOrder(userId: string, addressId: string, token: strin
     userId,
     items: order.items.map((item) => ({
       productId: item.productId,
-      variantId: item.variantId,
+      variantId: item.variantId ?? '',
       quantity: item.quantity,
       price: Number(item.price),
     })),

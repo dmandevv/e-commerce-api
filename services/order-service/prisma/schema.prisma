@@ -21,12 +21,12 @@ model Order {
   status          OrderStatus @default(PENDING)
   total           Decimal     @db.Decimal(10, 2)
   
-  shippingName     String
-  shippingStreet   String
-  shippingCity     String
-  shippingProvince String
-  shippingPostal   String
-  shippingCountry  String
+  shippingName     String?
+  shippingStreet   String?
+  shippingCity     String?
+  shippingProvince String?
+  shippingPostal   String?
+  shippingCountry  String?
 
   stripePaymentId String?
   items           OrderItem[]
@@ -45,7 +45,7 @@ model OrderItem {
   name      String
   price     Decimal @db.Decimal(10, 2)
   quantity  Int
-  variantId String
+  variantId String?
 
   @@map("order_items")
 }

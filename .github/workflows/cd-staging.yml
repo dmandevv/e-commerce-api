@@ -75,7 +75,7 @@ jobs:
       - name: Migrate order-service
         working-directory: services/order-service
         run: |
-          echo "DATABASE_URL=${{ secrets.ORDER_DATABASE_URL }}" > .env
+          echo "DATABASE_URL=${{ secrets.ORDER_DIRECT_URL }}" > .env
           npm install prisma --no-save
           npx prisma migrate deploy
           rm .env
@@ -83,7 +83,7 @@ jobs:
       - name: Migrate payment-service
         working-directory: services/payment-service
         run: |
-          echo "DATABASE_URL=${{ secrets.PAYMENT_DATABASE_URL }}" > .env
+          echo "DATABASE_URL=${{ secrets.PAYMENT_DIRECT_URL }}" > .env
           npm install prisma --no-save
           npx prisma migrate deploy
           rm .env
