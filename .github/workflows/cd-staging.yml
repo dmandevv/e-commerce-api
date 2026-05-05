@@ -76,10 +76,12 @@ jobs:
         run: npm install -g prisma
 
       - name: Migrate order-service
-        run: prisma migrate deploy --schema=services/order-service/prisma/schema.prisma --url=${{ secrets.ORDER_DATABASE_URL }}
+        working-directory: services/order-service
+        run: DATABASE_URL=${{ secrets.ORDER_DATABASE_URL }} prisma migrate deploy
 
       - name: Migrate payment-service
-        run: prisma migrate deploy --schema=services/payment-service/prisma/schema.prisma --url=${{ secrets.PAYMENT_DATABASE_URL }}
+        working-directory: services/payment-service
+        run: DATABASE_URL=${{ secrets.PAYMENT_DATABASE_URL }} prisma migrate deploy
 
  
 
