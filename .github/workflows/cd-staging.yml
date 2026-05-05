@@ -72,16 +72,16 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install dependencies
-        run: npm install --prefix services/order-service && npm install --prefix services/payment-service
+      - name: Install Prisma CLI
+        run: npm install -g prisma
 
       - name: Migrate order-service
-        run: npx prisma migrate deploy --schema=services/order-service/prisma/schema.prisma
+        run: prisma migrate deploy --schema=services/order-service/prisma/schema.prisma
         env:
           DATABASE_URL: ${{ secrets.ORDER_DATABASE_URL }}
 
       - name: Migrate payment-service
-        run: npx prisma migrate deploy --schema=services/payment-service/prisma/schema.prisma
+        run: prisma migrate deploy --schema=services/payment-service/prisma/schema.prisma
         env:
           DATABASE_URL: ${{ secrets.PAYMENT_DATABASE_URL }}
  
