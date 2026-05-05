@@ -72,16 +72,13 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install Prisma CLI
-        run: npm install -g prisma
-
       - name: Migrate order-service
         working-directory: services/order-service
-        run: DATABASE_URL=${{ secrets.ORDER_DATABASE_URL }} prisma migrate deploy
+        run: npm install prisma --no-save && DATABASE_URL=${{ secrets.ORDER_DATABASE_URL }} npx prisma migrate deploy
 
       - name: Migrate payment-service
         working-directory: services/payment-service
-        run: DATABASE_URL=${{ secrets.PAYMENT_DATABASE_URL }} prisma migrate deploy
+        run: npm install prisma --no-save && DATABASE_URL=${{ secrets.PAYMENT_DATABASE_URL }} npx prisma migrate deploy
 
  
 
