@@ -28,7 +28,10 @@ async function migrate() {
 
   const Product = conn.model('Product', ProductSchema);
 
-  const products = await Product.find({ variants: { $size: 0 }, stock: { $exists: true } });
+  const products = await Product.find({
+    $or: [{ variants: { $exists: false } }, { variants: { $size: 0 } }],
+    stock: { $exists: true },
+  });
   console.log(`Found ${products.length} products to migrate`);
 
   for (const product of products) {
