@@ -3,7 +3,7 @@ import swaggerUi from 'swagger-ui-express';
 import productRoutes from './routes/productRoutes.js';
 import { createErrorHandler } from '@ecommerce/shared/middleware';
 import swaggerSpec from './swagger.js';
-import { requestId, csrfProtection} from '@ecommerce/shared/middleware';
+import { requestId, csrfProtection, createRequestLogger } from '@ecommerce/shared/middleware';
 import { metricsMiddleware, metricsEndpoint } from '@ecommerce/shared/metrics';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -13,6 +13,7 @@ export const app = express();
 // ─── Middleware ──────────────────────────────────────────
 app.use(helmet());
 app.use(requestId);
+app.use(createRequestLogger('product-service'));
 app.use(metricsMiddleware('product-service'));
 
 app.use(express.json());

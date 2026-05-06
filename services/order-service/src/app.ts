@@ -1,9 +1,8 @@
 import express from 'express';
 import swaggerUi from 'swagger-ui-express';
 import orderRoutes from './routes/orderRoutes.js';
-import { createErrorHandler } from '@ecommerce/shared/middleware';
 import swaggerSpec from './swagger.js';
-import { requestId, csrfProtection } from '@ecommerce/shared/middleware';
+import { requestId, csrfProtection, createRequestLogger, createErrorHandler } from '@ecommerce/shared/middleware';
 import { metricsMiddleware, metricsEndpoint } from '@ecommerce/shared/metrics';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -13,6 +12,7 @@ export const app = express();
 // ─── Middleware ──────────────────────────────────────────
 app.use(helmet());
 app.use(requestId);
+app.use(createRequestLogger('order-service'));
 app.use(metricsMiddleware('order-service'));
 
 app.use(express.json());
