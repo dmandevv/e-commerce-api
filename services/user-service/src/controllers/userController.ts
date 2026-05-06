@@ -177,7 +177,7 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
       email: user.email,
       role: user.role,
       addresses: user.addresses.map((a) => ({
-        _id: a._id.toString(),
+        id: a._id.toString(),
         label: a.label,
         street: a.street,
         city: a.city,

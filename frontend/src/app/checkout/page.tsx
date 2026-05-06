@@ -19,7 +19,7 @@ const stripePromise = loadStripe(
 type CheckoutStage = "summary" | "processing" | "payment" | "error";
 
 interface IAddress {
-  _id: string;
+  id: string;
   label: string;
   street: string;
   city: string;
@@ -106,7 +106,7 @@ export default function CheckoutPage() {
           setShowAddForm(true);
         } else {
           const def = addrs.find((a) => a.isDefault) ?? addrs[0];
-          if (def) setSelectedAddressId(def._id);
+          if (def) setSelectedAddressId(def.id);
         }
       })
       .catch(() => setShowAddForm(true))
@@ -127,7 +127,7 @@ export default function CheckoutPage() {
       });
       const added = res.data.address;
       setAddresses((prev) => [...prev, added]);
-      setSelectedAddressId(added._id);
+      setSelectedAddressId(added.id);
       setShowAddForm(false);
       setNewAddress({ label: "", street: "", city: "", province: "", postalCode: "", country: "Canada", isDefault: false });
     } catch (err) {
@@ -253,9 +253,9 @@ export default function CheckoutPage() {
                     <div className="space-y-2">
                       {addresses.map((addr) => (
                         <label
-                          key={addr._id}
+                          key={addr.id}
                           className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                            selectedAddressId === addr._id
+                            selectedAddressId === addr.id
                               ? "border-[#e77600] bg-[#fff3e0]"
                               : "border-[#d5d9d9] hover:border-[#007185]"
                           }`}
@@ -263,9 +263,9 @@ export default function CheckoutPage() {
                           <input
                             type="radio"
                             name="address"
-                            value={addr._id}
-                            checked={selectedAddressId === addr._id}
-                            onChange={() => setSelectedAddressId(addr._id)}
+                            value={addr.id}
+                            checked={selectedAddressId === addr.id}
+                            onChange={() => setSelectedAddressId(addr.id)}
                             className="mt-0.5"
                           />
                           <div className="text-sm">

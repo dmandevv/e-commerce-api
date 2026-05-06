@@ -22,7 +22,7 @@ export const addAddress = async (req: Request, res: Response): Promise<void> => 
         success: true,
         data: {
             address: {
-                _id: newAddress._id.toString(),
+                id: newAddress._id.toString(),
                 label: newAddress.label,
                 street: newAddress.street,
                 city: newAddress.city,
