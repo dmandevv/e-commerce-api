@@ -176,6 +176,7 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
       name: user.name,
       email: user.email,
       role: user.role,
+      addresses: user.addresses as any,
       createdAt: user.createdAt,
     },
   };

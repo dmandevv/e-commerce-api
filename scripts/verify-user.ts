@@ -12,8 +12,14 @@ if (!MONGODB_URI) {
   process.exit(1);
 }
 
+function buildDbUri(base: string, dbName: string): string {
+  const url = new URL(base);
+  url.pathname = '/' + dbName;
+  return url.toString();
+}
+
 async function run() {
-  const conn = await mongoose.createConnection(MONGODB_URI!).asPromise();
+  const conn = await mongoose.createConnection(buildDbUri(MONGODB_URI!, 'user-service')).asPromise();
 
   const User = conn.model('User', new mongoose.Schema({
     email: String,
