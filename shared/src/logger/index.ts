@@ -1,12 +1,10 @@
 import pino from 'pino';
 
-const isDev = process.env.NODE_ENV !== 'production';
-
 export function createLogger(service: string) {
   return pino({
     level: process.env.LOG_LEVEL || 'info',
     base: { service },
-    transport: isDev
+    transport: process.env.LOG_PRETTY === 'true'
       ? { target: 'pino-pretty', options: { colorize: true } }
       : undefined,
   });
