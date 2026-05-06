@@ -166,7 +166,6 @@ export default function CheckoutPage() {
   const total = Math.round((subtotal + tax) * 100) / 100;
 
   const handlePlaceOrder = async () => {
-    console.log("[checkout] placing order with addressId:", selectedAddressId);
     if (!selectedAddressId) {
       setError("Please select a shipping address.");
       return;
