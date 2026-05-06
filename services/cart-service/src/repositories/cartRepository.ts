@@ -1,6 +1,9 @@
 import { createClient, type RedisClientType } from 'redis';
+import { createLogger } from '@ecommerce/shared/logger';
 import { config } from '../config/index.js';
 import type { ICart, ICartItem } from '@ecommerce/shared/types';
+
+const logger = createLogger('cart-service');
 
 export class CartRepository {
   private client: RedisClientType;
@@ -9,13 +12,13 @@ export class CartRepository {
     this.client = createClient({ url: config.redisUrl });
 
     this.client.on('error', (err: any) => {
-      console.error('Redis error:', err);
+      logger.error({ err }, 'Redis error');
     });
   }
 
   async connect(): Promise<void> {
     await this.client.connect();
-    console.log('Redis connected');
+    logger.info('Redis connected');
   }
 
   // ─── Key format: "cart:{userId}" ────────────────────────

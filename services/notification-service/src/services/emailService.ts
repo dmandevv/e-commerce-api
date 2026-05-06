@@ -1,7 +1,9 @@
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
+import { createLogger } from '@ecommerce/shared/logger';
 import { config } from '../config/index.js';
 
+const logger = createLogger('notification-service');
 let transporter: Transporter;
 
 export function initEmailService(): void {
@@ -14,10 +16,9 @@ export function initEmailService(): void {
         pass: config.smtp.pass,
       },
     });
-    console.log(`Email service connected to ${config.smtp.host}`);
+    logger.info({ host: config.smtp.host }, 'Email service connected');
   } else {
-    // Development fallback: log emails to console
-    console.log('SMTP not configured — emails will be logged to console');
+    logger.warn('SMTP not configured — emails will be logged');
   }
 }
 
@@ -27,11 +28,7 @@ export async function sendEmail(
   html: string
 ): Promise<void> {
   if (!transporter) {
-    console.log('─── EMAIL (console mode) ───');
-    console.log(`To: ${to}`);
-    console.log(`Subject: ${subject}`);
-    console.log(`Body: ${html.substring(0, 500)}...`);
-    console.log('────────────────────────────');
+    logger.info({ to, subject, body: html.substring(0, 500) }, 'EMAIL (console mode)');
     return;
   }
 

@@ -1,5 +1,8 @@
 import { createClient } from 'redis';
+import { createLogger } from '@ecommerce/shared/logger';
 import { config } from '../config/index.js';
+
+const logger = createLogger('product-service');
 
 // Create a Redis client instance.
 // createClient() returns an object that manages the TCP connection to Redis.
@@ -8,15 +11,15 @@ const redis = createClient({ url: config.redisUrl });
 
 // Log errors but don't crash the service. If Redis goes down,
 // the service should still work — just slower (every request hits MongoDB).
-redis.on('error', (err) => console.error('Redis cache error:', err));
+redis.on('error', (err) => logger.error({ err }, 'Redis cache error'));
 
 // Connect to Redis. Wrapped in try/catch so the service starts even if
 // Redis is unavailable — caching is optional, MongoDB is the source of truth.
 try {
   await redis.connect();
-  console.log('Redis cache connected');
+  logger.info('Redis cache connected');
 } catch (err) {
-  console.error('Redis cache unavailable — running without cache:', err);
+  logger.error({ err }, 'Redis cache unavailable — running without cache');
 }
 
 // Prefix all cache keys with "products:" so they don't collide with

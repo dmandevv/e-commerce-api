@@ -1,8 +1,11 @@
 import { type Channel } from 'amqplib';
+import { createLogger } from '@ecommerce/shared/logger';
 import { config } from '../config/index.js';
 import { Product } from '../models/Product.js';
 import { connectWithRetry } from '@ecommerce/shared';
 import type { OrderPlacedEvent, PaymentCompletedEvent, PaymentFailedEvent } from '@ecommerce/shared/events';
+
+const logger = createLogger('product-service');
 
 const EXCHANGE = 'ecommerce.events';
 const QUEUE = 'product-service.inventory';
@@ -48,7 +51,7 @@ export async function startConsumer(): Promise<void> {
 
   await channel.prefetch(1);
 
-  console.log('product-service inventory consumer ready');
+  logger.info('Inventory consumer ready');
 
   channel.consume(QUEUE, async (msg) => {
     if (!msg) return;
@@ -68,7 +71,7 @@ export async function startConsumer(): Promise<void> {
       }
       channel.ack(msg);
     } catch (err) {
-      console.error(`Error processing ${routingKey}:`, err);
+      logger.error({ err, routingKey }, 'Error processing event');
       channel.nack(msg, false, true);
     }
   });

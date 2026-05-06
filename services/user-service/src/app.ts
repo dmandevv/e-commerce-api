@@ -1,9 +1,8 @@
 import express from 'express';
 import swaggerUi from 'swagger-ui-express';
 import userRoutes from './routes/userRoutes.js';
-import { errorHandler } from './middleware/errorHandler.js';
 import swaggerSpec from './swagger.js';
-import { requestId, csrfProtection } from '@ecommerce/shared/middleware';
+import { requestId, csrfProtection, createRequestLogger, createErrorHandler } from '@ecommerce/shared/middleware';
 import { metricsMiddleware, metricsEndpoint } from '@ecommerce/shared/metrics';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -14,6 +13,7 @@ export const app = express();
 // CORS is handled by the NGINX gateway — no need to set it here
 app.use(helmet());
 app.use(requestId);
+app.use(createRequestLogger('user-service'));
 app.use(metricsMiddleware('user-service'));
 
 app.use(express.json());
@@ -33,4 +33,4 @@ app.get('/health', (_req, res) => {
 app.get('/metrics', metricsEndpoint);
 
 // ─── Error Handler (must be last) ───────────────────────
-app.use(errorHandler);
+app.use(createErrorHandler('user-service'));

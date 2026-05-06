@@ -1,10 +1,13 @@
-import { type Channel } from 'amqplib';
 import { config } from '../config/index.js';
+
+import { type Channel } from 'amqplib';
 import { connectWithRetry } from '@ecommerce/shared';
-
 let channel: Channel | null = null;
-
 const EXCHANGE = 'ecommerce.events';
+
+import { createLogger } from '@ecommerce/shared/logger';
+const logger = createLogger('user-service');
+
 
 export async function connectRabbitMQ(): Promise<void> {
   const connection = await connectWithRetry(config.rabbitmqUrl);
@@ -12,7 +15,7 @@ export async function connectRabbitMQ(): Promise<void> {
 
   await channel.assertExchange(EXCHANGE, 'topic', { durable: true });
 
-  console.log('RabbitMQ connected (publisher)');
+  logger.info('RabbitMQ connected');
 }
 
 export async function publishEvent(routingKey: string, data: unknown): Promise<void> {

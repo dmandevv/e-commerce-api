@@ -3,21 +3,23 @@ import { config } from './config/index.js';
 import { app } from './app.js';
 import { startConsumer } from './events/consumer.js';
 
+import { createLogger } from '@ecommerce/shared/logger';
+const logger = createLogger('product-service');
 
 // ─── Start ──────────────────────────────────────────────
 const start = async (): Promise<void> => {
   try {
     await mongoose.connect(config.mongoUri);
-    console.log('MongoDB connected');
+    logger.info('MongoDB connected');
 
     app.listen(config.port, () => {
-      console.log(`Product service running on port ${config.port}`);
+      logger.info({ port: config.port }, 'Service running');
     });
 
     await startConsumer();
 
   } catch (err) {
-    console.error('Failed to start product service:', err);
+    logger.error({ err }, 'Failed to start service:');
     process.exit(1);
   }
 };

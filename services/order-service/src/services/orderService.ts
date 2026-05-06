@@ -1,8 +1,11 @@
+import { createLogger } from '@ecommerce/shared/logger';
 import { prisma } from '../lib/prisma.js';
 import { config } from '../config/index.js';
 import { publishEvent } from '../events/publisher.js';
 import { EventNames } from '@ecommerce/shared/events';
 import { NotFoundError, ValidationError } from '@ecommerce/shared/errors';
+
+const logger = createLogger('order-service');
 import { CircuitBreaker } from '@ecommerce/shared';
 import type { ICart, IUser } from '@ecommerce/shared/types';
 import type { OrderPlacedEvent } from '@ecommerce/shared/events';
@@ -119,7 +122,7 @@ export async function placeOrder(userId: string, addressId: string, token: strin
       fetch(`${config.cartServiceUrl}/api/cart`, { method: 'DELETE', headers })
     );
   } catch {
-    console.error('Failed to clear cart after order — cart may be stale');
+    logger.warn('Failed to clear cart after order — cart may be stale');
   }
 
   // 6. Publish event for payment-service and notification-service

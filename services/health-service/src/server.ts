@@ -1,6 +1,9 @@
+import { createLogger } from '@ecommerce/shared/logger';
 import { config } from './config/index.js';
 import { app } from './app.js';
 
+const logger = createLogger('health-service');
+
 app.listen(config.port, () => {
-  console.log(`Health service running on port ${config.port}`);
+  logger.info({ port: config.port }, 'Service started');
 });

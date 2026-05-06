@@ -1,9 +1,12 @@
+import { createLogger } from '@ecommerce/shared/logger';
 import { config } from './config/index.js';
 import { initEmailService } from './services/emailService.js';
 import { startConsumer } from './events/consumer.js';
 import { initSocketServer } from './socket/index.js';
 import { createServer } from 'http';
 import { app } from './app.js';
+
+const logger = createLogger('notification-service');
 
 // Create an HTTP server manually instead of using app.listen().
 // Both Express and Socket.IO attach to this same server.
@@ -27,10 +30,10 @@ const start = async (): Promise<void> => {
     // app.listen() creates its own HTTP server internally — we already
     // created one above, so we listen on that directly.
     httpServer.listen(config.port, () => {
-      console.log(`Notification service running on port ${config.port}`);
+      logger.info({ port: config.port }, 'Service started');
     });
   } catch (err) {
-    console.error('Failed to start notification service:', err);
+    logger.error({ err }, 'Failed to start service');
     process.exit(1);
   }
 };

@@ -20,6 +20,7 @@ RUN npx tsc --build shared services/product-service
 
 # ─── Stage 2: Production ────────────────────────────────
 FROM node:22-alpine
+ENV NODE_ENV=production
 
 WORKDIR /app
 

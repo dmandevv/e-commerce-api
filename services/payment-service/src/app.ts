@@ -3,9 +3,8 @@ import swaggerUi from 'swagger-ui-express';
 import paymentRoutes from './routes/paymentRoutes.js';
 import { stripeWebhook } from './controllers/paymentController.js';
 import { asyncHandler } from './middleware/asyncHandler.js';
-import { errorHandler } from './middleware/errorHandler.js';
 import swaggerSpec from './swagger.js';
-import { requestId, csrfProtection  } from '@ecommerce/shared/middleware';
+import { requestId, csrfProtection, createRequestLogger, createErrorHandler } from '@ecommerce/shared/middleware';
 import { metricsMiddleware, metricsEndpoint } from '@ecommerce/shared/metrics';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -15,6 +14,7 @@ export const app = express();
 // ─── Middleware ──────────────────────────────────────────
 app.use(helmet());
 app.use(requestId);
+app.use(createRequestLogger('payment-service'));
 app.use(metricsMiddleware('payment-service'));
 
 // Stripe webhook MUST come before express.json() — needs raw body
@@ -39,4 +39,4 @@ app.get('/health', (_req, res) => {
 });
 app.get('/metrics', metricsEndpoint);
 
-app.use(errorHandler);
+app.use(createErrorHandler('payment-service'));
