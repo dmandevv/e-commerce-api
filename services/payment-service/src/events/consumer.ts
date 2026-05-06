@@ -1,7 +1,10 @@
 import amqplib, { type Channel } from 'amqplib';
+import { createLogger } from '@ecommerce/shared/logger';
 import { config } from '../config/index.js';
 import { createPaymentForOrder } from '../services/paymentService.js';
 import type { OrderPlacedEvent } from '@ecommerce/shared/events';
+
+const logger = createLogger('payment-service');
 
 const EXCHANGE = 'ecommerce.events';
 const QUEUE = 'payment-service.orders';
@@ -12,18 +15,18 @@ async function connectWithRetry(url: string, maxRetries = 10): Promise<amqplib.C
       const conn = await amqplib.connect(url);
 
       conn.on('error', (err) => {
-        console.error('RabbitMQ connection error:', err.message);
+        logger.error({ err: err.message }, 'RabbitMQ connection error');
       });
 
       conn.on('close', () => {
-        console.error('RabbitMQ connection closed. Exiting for restart...');
+        logger.error('RabbitMQ connection closed, exiting for restart');
         process.exit(1);
       });
 
       return conn;
     } catch {
       const delay = Math.min(attempt * 2000, 10000);
-      console.log(`RabbitMQ attempt ${attempt}/${maxRetries} failed, retrying in ${delay / 1000}s...`);
+      logger.warn({ attempt, maxRetries, delaySecs: delay / 1000 }, 'RabbitMQ connection attempt failed, retrying');
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
@@ -42,20 +45,20 @@ export async function startConsumer(): Promise<void> {
 
   await channel.prefetch(1);
 
-  console.log('RabbitMQ consumer listening for order events');
+  logger.info('RabbitMQ consumer listening for order events');
 
   channel.consume(QUEUE, async (msg) => {
     if (!msg) return;
 
     try {
       const event: OrderPlacedEvent = JSON.parse(msg.content.toString());
-      console.log(`Received order.placed for order ${event.orderId}`);
+      logger.info({ orderId: event.orderId }, 'Received order.placed');
 
       await createPaymentForOrder(event);
 
       channel.ack(msg);
     } catch (err) {
-      console.error('Error processing order.placed:', err);
+      logger.error({ err }, 'Error processing order.placed');
       channel.nack(msg, false, true);
     }
   });

@@ -7,5 +7,5 @@
   "references": [
     { "path": "../../shared" }
   ],
-  "include": ["src"]
+  "include": ["src", "../../shared/src/middleware/errorHandler.test.ts"]
 }

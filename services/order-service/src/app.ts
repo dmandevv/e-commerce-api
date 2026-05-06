@@ -1,7 +1,7 @@
 import express from 'express';
 import swaggerUi from 'swagger-ui-express';
 import orderRoutes from './routes/orderRoutes.js';
-import { errorHandler } from './middleware/errorHandler.js';
+import { createErrorHandler } from '@ecommerce/shared/middleware';
 import swaggerSpec from './swagger.js';
 import { requestId, csrfProtection } from '@ecommerce/shared/middleware';
 import { metricsMiddleware, metricsEndpoint } from '@ecommerce/shared/metrics';
@@ -29,5 +29,5 @@ app.get('/health', (_req, res) => {
 });
 app.get('/metrics', metricsEndpoint);
 
-app.use(errorHandler);
+app.use(createErrorHandler('order-service'));
 

@@ -1,14 +1,25 @@
 // Tests for the centralized error handler middleware.
 // This is the LAST middleware in the Express chain — it catches all errors
 // thrown by route handlers and returns a properly formatted JSON response.
-
 import { describe, it, expect, vi } from "vitest";
-import { errorHandler } from "./errorHandler.js";
+
+vi.mock('@ecommerce/shared/logger', () => ({
+  createLogger: () => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  }),
+}));
+
+import { createErrorHandler } from "./errorHandler.js";
 import {
   AppError,
   NotFoundError,
   UnauthorizedError,
-} from "@ecommerce/shared/errors";
+} from "../errors/index.js";
+
+const errorHandler = createErrorHandler('test-service');
 
 // ─── Helpers ───────────────────────────────────────────────────────
 function mockReq() {
@@ -95,18 +106,12 @@ describe("errorHandler", () => {
     const err = new Error("something totally unexpected");
     const res = mockRes();
 
-    // Suppress console.error output during test
-    vi.spyOn(console, "error").mockImplementation(() => {});
-
     errorHandler(err, mockReq(), res, next);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    // Generic message — never expose internal error details to clients
     expect(res.json).toHaveBeenCalledWith({
       success: false,
       message: "Internal server error",
     });
-
-    vi.restoreAllMocks();
   });
 });

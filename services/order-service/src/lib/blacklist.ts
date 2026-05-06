@@ -1,18 +1,20 @@
 import { createClient } from 'redis';
 import { createBlacklist } from '@ecommerce/shared/middleware';
+import { createLogger } from '@ecommerce/shared/logger';
 import { config } from '../config/index.js';
 
+const logger = createLogger('order-service');
 const redis = createClient({ url: config.redisUrl });
 
 redis.on('error', (err) => {
-  console.error('[order-service] Redis blacklist error:', err);
+  logger.error({ err }, 'Redis blacklist error');
 });
 
 try {
   await redis.connect();
-  console.log('[order-service] Redis blacklist connected');
+  logger.info('Redis blacklist connected');
 } catch (err) {
-  console.error('[order-service] Redis blacklist unavailable at boot:', err);
+  logger.error({ err }, 'Redis blacklist unavailable at boot');
 }
 
 export const blacklist = createBlacklist(redis);

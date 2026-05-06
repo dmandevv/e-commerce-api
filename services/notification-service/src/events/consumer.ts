@@ -1,7 +1,10 @@
 import amqplib, { type Channel } from 'amqplib';
 import type { Server as SocketServer } from 'socket.io';
+import { createLogger } from '@ecommerce/shared/logger';
 import { config } from '../config/index.js';
 import { sendEmail } from '../services/emailService.js';
+
+const logger = createLogger('notification-service');
 import * as templates from '../templates/index.js';
 import { CircuitBreaker } from '@ecommerce/shared';
 import type {
@@ -27,7 +30,7 @@ async function getUserEmail(userId: string): Promise<string | null> {
     const { data } = await res.json();
     return data.email;
   } catch {
-    console.error(`Failed to fetch email for user ${userId}`);
+    logger.error({ userId }, 'Failed to fetch email for user');
     return null;
   }
 }
@@ -41,18 +44,18 @@ async function connectWithRetry(url: string, maxRetries = 10): Promise<amqplib.C
       const conn = await amqplib.connect(url);
 
       conn.on('error', (err) => {
-        console.error('RabbitMQ connection error:', err.message);
+        logger.error({ err: err.message }, 'RabbitMQ connection error');
       });
 
       conn.on('close', () => {
-        console.error('RabbitMQ connection closed. Exiting for restart...');
+        logger.error('RabbitMQ connection closed, exiting for restart');
         process.exit(1);
       });
 
       return conn;
     } catch {
       const delay = Math.min(attempt * 2000, 10000);
-      console.log(`RabbitMQ attempt ${attempt}/${maxRetries} failed, retrying in ${delay / 1000}s...`);
+      logger.warn({ attempt, maxRetries, delaySecs: delay / 1000 }, 'RabbitMQ connection attempt failed, retrying');
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
@@ -77,7 +80,7 @@ export async function startConsumer(io: SocketServer): Promise<void> {
 
   await channel.prefetch(1);
 
-  console.log('RabbitMQ consumer listening for notification events');
+  logger.info('RabbitMQ consumer listening for notification events');
 
   channel.consume(QUEUE, async (msg) => {
     if (!msg) return;
@@ -91,7 +94,7 @@ export async function startConsumer(io: SocketServer): Promise<void> {
           const event = data as UserRegisteredEvent;
           const { subject, html } = templates.verifyEmail(event.name, event.verificationToken);
           await sendEmail(event.email, subject, html);
-          console.log(`Verification email sent to ${event.email}`);
+          logger.info({ to: event.email }, 'Verification email sent');
           break;
         }
 
@@ -99,14 +102,14 @@ export async function startConsumer(io: SocketServer): Promise<void> {
           const event = data as PasswordResetRequestedEvent;
           const { subject, html } = templates.passwordReset(event.resetToken);
           await sendEmail(event.email, subject, html);
-          console.log(`Password reset email sent to ${event.email}`);
+          logger.info({ to: event.email }, 'Password reset email sent');
           break;
         }
 
         case 'order.placed': {
           const event = data as OrderPlacedEvent;
           const email = await getUserEmail(event.userId);
-          if (!email) { console.warn(`No email found for user ${event.userId}, skipping`); break; }
+          if (!email) { logger.warn({ userId: event.userId }, 'No email found for user, skipping'); break; }
           const { subject, html } = templates.orderConfirmation(
             event.orderId,
             event.total,
@@ -121,14 +124,14 @@ export async function startConsumer(io: SocketServer): Promise<void> {
             message: `Order ${event.orderId} confirmed`,
             orderId: event.orderId,
           });
-          console.log(`Order confirmation sent to ${email}`);
+          logger.info({ to: email, orderId: event.orderId }, 'Order confirmation sent');
           break;
         }
 
         case 'payment.completed': {
           const event = data as PaymentCompletedEvent;
           const email = await getUserEmail(event.userId);
-          if (!email) { console.warn(`No email found for user ${event.userId}, skipping`); break; }
+          if (!email) { logger.warn({ userId: event.userId }, 'No email found for user, skipping'); break; }
           const { subject, html } = templates.paymentReceipt(
             event.orderId,
             event.amount
@@ -139,14 +142,14 @@ export async function startConsumer(io: SocketServer): Promise<void> {
             message: `Payment received for order ${event.orderId}`,
             orderId: event.orderId,
           });
-          console.log(`Payment receipt sent to ${email}`);
+          logger.info({ to: email, orderId: event.orderId }, 'Payment receipt sent');
           break;
         }
 
         case 'payment.failed': {
           const event = data as PaymentFailedEvent;
           const email = await getUserEmail(event.userId);
-          if (!email) { console.warn(`No email found for user ${event.userId}, skipping`); break; }
+          if (!email) { logger.warn({ userId: event.userId }, 'No email found for user, skipping'); break; }
           const { subject, html } = templates.paymentFailed(
             event.orderId,
             event.reason
@@ -158,14 +161,14 @@ export async function startConsumer(io: SocketServer): Promise<void> {
             orderId: event.orderId,
             reason: event.reason,
           });
-          console.log(`Payment failure alert sent to ${email}`);
+          logger.info({ to: email, orderId: event.orderId }, 'Payment failure alert sent');
           break;
         }
 
         case 'order.status_updated': {
           const event = data as OrderStatusUpdatedEvent;
           const email = await getUserEmail(event.userId);
-          if (!email) { console.warn(`No email found for user ${event.userId}, skipping`); break; }
+          if (!email) { logger.warn({ userId: event.userId }, 'No email found for user, skipping'); break; }
           const { subject, html } = templates.orderStatusUpdate(
             event.orderId,
             event.newStatus
@@ -177,17 +180,17 @@ export async function startConsumer(io: SocketServer): Promise<void> {
             orderId: event.orderId,
             status: event.newStatus,
           });
-          console.log(`Status update sent to ${email}`);
+          logger.info({ to: email, orderId: event.orderId, status: event.newStatus }, 'Order status update sent');
           break;
         }
 
         default:
-          console.warn(`Unhandled event: ${routingKey}`);
+          logger.warn({ routingKey }, 'Unhandled event');
       }
 
       channel.ack(msg);
     } catch (err) {
-      console.error(`Error processing ${routingKey}:`, err);
+      logger.error({ err, routingKey }, 'Error processing event');
       channel.nack(msg, false, true);
     }
   });

@@ -1,8 +1,11 @@
 import Stripe from 'stripe';
+import { createLogger } from '@ecommerce/shared/logger';
 import { prisma } from '../lib/prisma.js';
 import { config } from '../config/index.js';
 import { publishEvent } from '../events/publisher.js';
 import { EventNames } from '@ecommerce/shared/events';
+
+const logger = createLogger('payment-service');
 import { NotFoundError } from '@ecommerce/shared/errors';
 import type { OrderPlacedEvent, PaymentCompletedEvent, PaymentFailedEvent } from '@ecommerce/shared/events';
 const stripe = new Stripe(config.stripeSecretKey);
@@ -15,7 +18,7 @@ export async function createPaymentForOrder(event: OrderPlacedEvent): Promise<vo
   });
 
   if (existing) {
-    console.log(`Payment already exists for order ${event.orderId}, skipping`);
+    logger.info({ orderId: event.orderId }, 'Payment already exists, skipping');
     return;
   }
 
@@ -41,7 +44,7 @@ export async function createPaymentForOrder(event: OrderPlacedEvent): Promise<vo
     },
   });
 
-  console.log(`PaymentIntent created for order ${event.orderId}: ${paymentIntent.id}`);
+  logger.info({ orderId: event.orderId, paymentIntentId: paymentIntent.id }, 'PaymentIntent created');
 }
 
 // ─── Called by REST endpoint — frontend fetches client_secret ─
@@ -83,7 +86,7 @@ export async function handleStripeWebhook(event: Stripe.Event): Promise<void> {
       };
 
       await publishEvent(EventNames.PAYMENT_COMPLETED, completedEvent);
-      console.log(`Payment completed for order ${payment.orderId}`);
+      logger.info({ orderId: payment.orderId }, 'Payment completed');
       break;
     }
 
@@ -107,11 +110,11 @@ export async function handleStripeWebhook(event: Stripe.Event): Promise<void> {
       };
 
       await publishEvent(EventNames.PAYMENT_FAILED, failedEvent);
-      console.log(`Payment failed for order ${payment.orderId}`);
+      logger.warn({ orderId: payment.orderId }, 'Payment failed');
       break;
     }
 
     default:
-      console.log(`Unhandled Stripe event type: ${event.type}`);
+      logger.warn({ stripeEventType: event.type }, 'Unhandled Stripe event type');
   }
 }

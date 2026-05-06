@@ -13,6 +13,8 @@ import { publishEvent } from '../events/publisher.js';
 import { EventNames } from '@ecommerce/shared/events';
 import type { PasswordResetRequestedEvent, UserRegisteredEvent } from '@ecommerce/shared/events';
 
+import { createLogger } from '@ecommerce/shared/logger';
+const logger = createLogger('user-service');
 
 function setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
   // Access token — readable by all services (so they can authenticate requests)
@@ -244,7 +246,7 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
     } catch (err) {
       // Verify failure = token already invalid/expired -> nothing to revoke.
       // Blacklist write failure = Redis down -> log loudly; cookies still clear.
-      console.error('[logout] Access-token revocation failed: ', err);
+      logger.error({ err }, 'Access-token revocation failed');
     }
   }
 
@@ -304,7 +306,7 @@ export const requestVerificationEmail = async (
   );
 
   // TODO (Step 7): publish USER_REGISTERED event with verificationToken
-  console.log(`[DEV] Resent verification link: http://localhost:3000/verify-email/${verificationToken}`);
+  logger.warn({ verificationToken }, '[DEV] Resent verification link');
 
   res.status(204).send();
 };

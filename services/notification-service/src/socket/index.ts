@@ -1,8 +1,11 @@
 import { Server as SocketServer } from 'socket.io';
 import type { Server as HttpServer } from 'http';
 import jwt from 'jsonwebtoken';
+import { createLogger } from '@ecommerce/shared/logger';
 import { config } from '../config/index.js';
 import type { JwtPayload } from '@ecommerce/shared/types';
+
+const logger = createLogger('notification-service');
 
 /**
  * Creates and configures a Socket.IO server.
@@ -62,10 +65,10 @@ export function initSocketServer(httpServer: HttpServer): SocketServer {
     // If the user has multiple tabs open, all tabs are in the same room
     // and all receive the event.
     socket.join(userId);
-    console.log(`User ${userId} connected to notifications`);
+    logger.info({ userId }, 'User connected to notifications');
 
     socket.on('disconnect', () => {
-      console.log(`User ${userId} disconnected from notifications`);
+      logger.info({ userId }, 'User disconnected from notifications');
     });
   });
 
