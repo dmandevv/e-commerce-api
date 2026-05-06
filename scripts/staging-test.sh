@@ -34,6 +34,14 @@ cleanup() {
 
 trap cleanup SIGINT SIGTERM
 
+# ─── Kill any lingering Next.js dev servers on port 3000 ─
+STALE=$(ss -tlnp 'sport = :3000' 2>/dev/null | awk 'NR>1 {match($0, /pid=([0-9]+)/, a); if (a[1]) print a[1]}')
+if [ -n "$STALE" ]; then
+  echo "Killing stale process on port 3000 (pid $STALE)..."
+  kill $STALE 2>/dev/null || true
+  sleep 0.5
+fi
+
 # ─── Start frontend pointed at staging ───────────────────
 echo "Starting frontend → staging backend at $STAGING_API_URL"
 echo ""
