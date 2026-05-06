@@ -29,7 +29,7 @@ export const config: Config = {
   jwtSecret: process.env.JWT_SECRET || '',
   accessTokenExpiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || '15m',
   refreshTokenExpiresInDays: parseInt(process.env.REFRESH_TOKEN_EXPIRES_DAYS || '7', 10),
-  cookieSecure: process.env.NODE_ENV === 'production',
+  cookieSecure: process.env.COOKIE_SECURE === 'true',
   cookieDomain: process.env.COOKIE_DOMAIN || '',
   rabbitmqUrl: process.env.RABBITMQ_URL || 'amqp://admin:admin_password@localhost:5672',
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
