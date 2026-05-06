@@ -712,7 +712,13 @@ describe('POST /api/users/reset-password/:token', () => {
 describe('POST /api/users/addresses', () => {
   it('should add an address and return 201', async () => {
     // fakeUser.addresses.push() needs to work, and save() resolves
-    fakeUser.addresses = [];
+    const mockAddresses: any[] = [];
+    mockAddresses.push = (addr: any) => {
+      addr._id = { toString: () => 'new-addr-id' };
+      Array.prototype.push.call(mockAddresses, addr);
+      return mockAddresses.length;
+    };
+    fakeUser.addresses = mockAddresses;
     fakeUser.save.mockResolvedValue(undefined);
     mockUser.findById.mockResolvedValue(fakeUser);
 
