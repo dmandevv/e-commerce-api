@@ -24,6 +24,10 @@ cleanup() {
   for pid in "${PIDS[@]}"; do
     kill "$pid" 2>/dev/null
   done
+  for pid in "${PIDS[@]}"; do
+    wait "$pid" 2>/dev/null
+  done
+  stty sane 2>/dev/null
   echo "Done."
   exit 0
 }
@@ -34,13 +38,14 @@ trap cleanup SIGINT SIGTERM
 echo "Starting frontend → staging backend at $STAGING_API_URL"
 echo ""
 
-(
+setsid bash -c '
   cd frontend
-  API_UPSTREAM_URL="$STAGING_API_URL" \
-  NEXT_PUBLIC_API_URL="" \
-  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="$(grep NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY .env | cut -d= -f2-)" \
-  npm run dev
-) &
+  exec env \
+    API_UPSTREAM_URL="'"$STAGING_API_URL"'" \
+    NEXT_PUBLIC_API_URL="" \
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="'"$(grep NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY frontend/.env | cut -d= -f2-)"'" \
+    npm run dev
+' &
 PIDS+=($!)
 
 echo "Frontend running. Press Ctrl+C to stop."
