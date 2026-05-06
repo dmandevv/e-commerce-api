@@ -298,7 +298,7 @@ export default function CheckoutPage() {
                         key={key}
                         type="text"
                         placeholder={placeholder}
-                        value={(newAddress as any)[key]}
+                        value={(newAddress as unknown as Record<string, string>)[key]}
                         onChange={(e) => setNewAddress((prev) => ({ ...prev, [key]: e.target.value }))}
                         className="w-full border border-[#d5d9d9] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#007185]"
                       />
