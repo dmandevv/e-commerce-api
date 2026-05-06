@@ -95,21 +95,34 @@ export default function CheckoutPage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
-  // ─── Load addresses ───────────────────────────────────────
+  // ─── Load addresses + resume any pending order ───────────────
   useEffect(() => {
     if (!isAuthenticated) return;
-    apiFetch<{ data: { addresses: IAddress[] } }>("/api/users/profile")
-      .then((res) => {
-        const addrs = res.data.addresses ?? [];
-        setAddresses(addrs);
-        if (addrs.length === 0) {
-          setShowAddForm(true);
-        } else {
-          const def = addrs.find((a) => a.isDefault) ?? addrs[0];
-          if (def) setSelectedAddressId(def.id);
-        }
-      })
-      .catch(() => setShowAddForm(true))
+
+    Promise.all([
+      apiFetch<{ data: { addresses: IAddress[] } }>("/api/users/profile"),
+      apiFetch<{ data: IOrder[] }>("/api/orders/mine"),
+    ]).then(([profileRes, ordersRes]) => {
+      // Addresses
+      const addrs = profileRes.data.addresses ?? [];
+      setAddresses(addrs);
+      if (addrs.length === 0) {
+        setShowAddForm(true);
+      } else {
+        const def = addrs.find((a) => a.isDefault) ?? addrs[0];
+        if (def) setSelectedAddressId(def.id);
+      }
+
+      // Resume pending order
+      const pending = ordersRes.data.find((o) => o.status === "PENDING");
+      if (pending) {
+        setOrderId(pending.id);
+        setStage("processing");
+        pollForClientSecret(pending.id)
+          .then((secret) => { setClientSecret(secret); setStage("payment"); })
+          .catch(() => setStage("summary"));
+      }
+    }).catch(() => setShowAddForm(true))
       .finally(() => setAddressesLoading(false));
   }, [isAuthenticated]);
 
