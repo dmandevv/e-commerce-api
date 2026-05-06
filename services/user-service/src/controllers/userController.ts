@@ -176,7 +176,16 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
       name: user.name,
       email: user.email,
       role: user.role,
-      addresses: user.addresses as any,
+      addresses: user.addresses.map((a) => ({
+        _id: a._id.toString(),
+        label: a.label,
+        street: a.street,
+        city: a.city,
+        province: a.province,
+        postalCode: a.postalCode,
+        country: a.country,
+        isDefault: a.isDefault,
+      })),
       createdAt: user.createdAt,
     },
   };
