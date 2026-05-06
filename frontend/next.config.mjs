@@ -1,4 +1,8 @@
 /** @type {import('next').NextConfig} */
+// API_UPSTREAM_URL is server-only (no NEXT_PUBLIC_ prefix) — sets the rewrite destination.
+// Falls back to the public var (production), then the hardcoded prod API.
+const API_UPSTREAM = process.env.API_UPSTREAM_URL || process.env.NEXT_PUBLIC_API_URL || 'https://api.dmandevv.shop';
+
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -14,7 +18,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'https://api.dmandevv.shop/api/:path*',
+        destination: `${API_UPSTREAM}/api/:path*`,
       },
     ];
   },

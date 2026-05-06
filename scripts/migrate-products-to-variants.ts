@@ -28,13 +28,14 @@ async function migrate() {
 
   const Product = conn.model('Product', ProductSchema);
 
-  const products = await Product.find({
+  // Phase 1: products with no variants at all
+  const productsWithoutVariants = await Product.find({
     $or: [{ variants: { $exists: false } }, { variants: { $size: 0 } }],
     stock: { $exists: true },
   });
-  console.log(`Found ${products.length} products to migrate`);
+  console.log(`Phase 1: ${productsWithoutVariants.length} products with no variants`);
 
-  for (const product of products) {
+  for (const product of productsWithoutVariants) {
     const stock = (product as any).stock ?? 0;
     const sku = (product as any).name
       .toUpperCase()
@@ -44,11 +45,32 @@ async function migrate() {
 
     await Product.findByIdAndUpdate(product._id, {
       $set: {
-        variants: [{ sku, attributes: {}, stock, reservedStock: 0 }],
+        variants: [{ sku, attributes: {}, stock, reservedStock: 0, price: (product as any).price }],
       },
     });
 
-    console.log(`✓ ${(product as any).name}`);
+    console.log(`  ✓ ${(product as any).name}`);
+  }
+
+  // Phase 2: products with variants that are missing the price field
+  const productsWithPricelessVariants = await Product.find({
+    'variants.0': { $exists: true },           // has at least one variant
+    'variants.price': { $exists: false },       // but none have price set
+  });
+  console.log(`Phase 2: ${productsWithPricelessVariants.length} products with variants missing price`);
+
+  for (const product of productsWithPricelessVariants) {
+    const productPrice = (product as any).price;
+    const updatedVariants = ((product as any).variants as any[]).map((v: any) => ({
+      ...v,
+      price: v.price ?? productPrice,
+    }));
+
+    await Product.findByIdAndUpdate(product._id, {
+      $set: { variants: updatedVariants },
+    });
+
+    console.log(`  ✓ ${(product as any).name} — set price $${productPrice} on ${updatedVariants.length} variant(s)`);
   }
 
   await conn.close();

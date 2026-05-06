@@ -99,7 +99,11 @@ export async function apiFetch<T>(
 
   if (!res.ok) {
     const body = await res.json().catch(() => null);
-    throw new Error(body?.message || `API error: ${res.status}`);
+    const message =
+      body?.message ||
+      body?.errors?.[0]?.message ||
+      `API error: ${res.status}`;
+    throw new Error(message);
   }
 
   return res.json();

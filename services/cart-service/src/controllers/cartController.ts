@@ -40,7 +40,7 @@ export const addItem = async (req: Request, res: Response): Promise<void> => {
   const cart = await cartRepository.addItem(req.user!.id, {
     productId,
     name: product.name,
-    price: product.price,
+    price: variant.price ?? product.price,
     quantity,
     image: product.images?.[0]?.url || '',
     variantId: variantId,

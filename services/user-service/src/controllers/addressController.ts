@@ -18,7 +18,21 @@ export const addAddress = async (req: Request, res: Response): Promise<void> => 
     await user.save();
 
     const newAddress = user.addresses[user.addresses.length - 1];
-    res.status(201).json({ success: true, data: { address: newAddress } });
+    res.status(201).json({
+        success: true,
+        data: {
+            address: {
+                id: newAddress._id.toString(),
+                label: newAddress.label,
+                street: newAddress.street,
+                city: newAddress.city,
+                province: newAddress.province,
+                postalCode: newAddress.postalCode,
+                country: newAddress.country,
+                isDefault: newAddress.isDefault,
+            },
+        },
+    });
 }
 
 export const updateAddress = async (req: Request, res: Response): Promise<void> => {

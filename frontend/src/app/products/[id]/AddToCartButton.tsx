@@ -8,10 +8,12 @@ import { useCartContext } from "@/context/CartContext";
 
 export default function AddToCartButton({
   productId,
+  variantId,
   inStock,
   stock,
 }: {
   productId: string;
+  variantId: string;
   inStock: boolean;
   stock: number;
 }) {
@@ -31,7 +33,7 @@ export default function AddToCartButton({
     setMessage("");
 
     try {
-      await addItem(productId, quantity);
+      await addItem(productId, variantId, quantity);
       setMessage("Added to cart!");
       setQuantity(1); // Reset quantity after adding
     } catch (err) {

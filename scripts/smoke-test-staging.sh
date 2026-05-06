@@ -263,7 +263,7 @@ else
     -b "$COOKIE_JAR" \
     -d '{"label":"Home","street":"123 Test St","city":"Toronto","province":"Ontario","postalCode":"M5V 3A8","country":"Canada"}'
   check "POST /api/users/addresses  (create)" "201"
-  ADDRESS_ID=$(echo "$BODY" | grep -o '"_id":"[^"]*"' | head -1 | cut -d'"' -f4 || true)
+  ADDRESS_ID=$(echo "$BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('data',{}).get('address',{}).get('id',''))" 2>/dev/null || true)
   info "Address ID: ${ADDRESS_ID:-<not found>}"
 
   mut_curl -X POST "$BASE_URL/api/orders" \
