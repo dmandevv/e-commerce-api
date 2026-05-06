@@ -52,7 +52,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     name, email, password, role: 'customer',
     // Skip email verification outside production so staging/dev smoke tests
     // and local development work without needing a real email flow.
-    emailVerified: process.env.NODE_ENV !== 'production',
+    emailVerified: process.env.EMAIL_VERIFY !== 'true',
   });
 
   // Create email verification token. The raw value goes to notification-service
