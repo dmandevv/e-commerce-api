@@ -59,6 +59,11 @@ spec:
                 configMapKeyRef:
                   name: ecommerce-config
                   key: CLIENT_URL
+            - name: ORDER_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: ecommerce-config
+                  key: ORDER_SERVICE_URL
           resources:
             requests:
               cpu: 30m
