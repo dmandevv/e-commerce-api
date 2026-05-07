@@ -19,6 +19,7 @@ interface Config {
   rabbitmqUrl: string;
   redisUrl: string;
   clientUrl: string;
+  orderServiceUrl: string;
   maxLoginAttempts: number;
   lockoutDurationMinutes: number;
 }
@@ -34,6 +35,7 @@ export const config: Config = {
   rabbitmqUrl: process.env.RABBITMQ_URL || 'amqp://admin:admin_password@localhost:5672',
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
+  orderServiceUrl: process.env.ORDER_SERVICE_URL || 'http://localhost:3004',
   maxLoginAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS || '5', 10),
   lockoutDurationMinutes: parseInt(process.env.LOCKOUT_DURATION_MINUTES || '15', 10),
 };

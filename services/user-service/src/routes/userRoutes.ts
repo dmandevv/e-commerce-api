@@ -3,8 +3,9 @@ import {
     register, login, getProfile, getUserById, refresh, logout, getCsrfToken, 
     verifyEmail, requestVerificationEmail, forgotPassword, resetPassword
 } from '../controllers/userController.js';
+import { listUsers, updateUserRole, deleteUser, getAdminStats } from '../controllers/adminController.js';
 import { addAddress, updateAddress, deleteAddress} from '../controllers/addressController.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, authorize } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { validate, sanitizeBody } from '@ecommerce/shared/middleware';
 import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from '../schemas/userSchemas.js';
@@ -34,5 +35,12 @@ router.post('/verify-email/request', authenticate, asyncHandler(requestVerificat
 router.post('/addresses', authenticate, validate(createAddressSchema), asyncHandler(addAddress));
 router.put('/addresses/:addressId', authenticate, validate(updateAddressSchema), asyncHandler(updateAddress));
 router.delete('/addresses/:addressId', authenticate, validate(addressParamsSchema, 'params'), asyncHandler(deleteAddress));
+
+// Admin routes
+router.get('/admin', authenticate, authorize('admin'), asyncHandler(listUsers));
+router.get('/admin/stats', authenticate, authorize('admin'), asyncHandler(getAdminStats));
+router.patch('/admin/:id', authenticate, authorize('admin'), asyncHandler(updateUserRole));
+router.delete('/admin/:id', authenticate, authorize('admin'), asyncHandler(deleteUser));
+
 
 export default router;

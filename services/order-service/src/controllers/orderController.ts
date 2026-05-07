@@ -25,3 +25,27 @@ export const updateStatus = async (req: Request<{ id: string }>, res: Response):
 
   res.status(200).json({ success: true, data: order });
 };
+
+export const getAllOrders = async (req: Request, res: Response): Promise<void> => {
+  const page = Math.max(1, parseInt(req.query.page as string) || 1);
+  const limit = Math.min(100, parseInt(req.query.limit as string) || 20);
+  const sortBy = ['createdAt', 'total'].includes(req.query.sortBy as string)
+    ? (req.query.sortBy as string)
+    : 'createdAt';
+  const sortOrder = req.query.sortOrder === 'asc' ? 'asc' : 'desc';
+  const status = req.query.status as string | undefined;
+  const userId = req.query.userId as string | undefined;
+  const createdAfter = req.query.createdAfter as string | undefined;
+  const createdBefore = req.query.createdBefore as string | undefined;
+
+  const result = await orderService.getAllOrders({
+    page, limit, sortBy, sortOrder, status, userId, createdAfter, createdBefore,
+  });
+
+  res.status(200).json({ success: true, data: result });
+};
+
+export const getOrderStats = async (_req: Request, res: Response): Promise<void> => {
+  const stats = await orderService.getOrderStats();
+  res.status(200).json({ success: true, data: stats });
+};
