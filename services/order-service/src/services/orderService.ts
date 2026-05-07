@@ -206,3 +206,65 @@ export async function updateOrderStatus(orderId: string, status: string) {
 
   return updated;
 }
+
+// ─── Admin: Get All Orders ──────────────────────────────
+export async function getAllOrders(params: {
+  page: number;
+  limit: number;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+  status?: string;
+  userId?: string;
+  createdAfter?: string;
+  createdBefore?: string;
+}) {
+  const { page, limit, sortBy, sortOrder, status, userId, createdAfter, createdBefore } = params;
+
+  const where: Record<string, unknown> = {};
+
+  if (status) where.status = status;
+  if (userId) where.userId = userId;
+
+  if (createdAfter || createdBefore) {
+    where.createdAt = {
+      ...(createdAfter && { gte: new Date(createdAfter) }),
+      ...(createdBefore && { lte: new Date(createdBefore) }),
+    };
+  }
+
+  const skip = (page - 1) * limit;
+
+  const [orders, total] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      include: { items: true },
+      orderBy: { [sortBy]: sortOrder },
+      skip,
+      take: limit,
+    }),
+    prisma.order.count({ where }),
+  ]);
+
+  return { orders, total, page, pages: Math.ceil(total / limit) };
+
+}
+
+// ─── Admin: Stats ───────────────────────────────────────
+export async function getOrderStats() {
+  const [total, byStatus, revenue] = await Promise.all([
+    prisma.order.count(),
+    prisma.order.groupBy({
+      by: ['status'],
+      _count: { status: true },
+    }),
+    prisma.order.aggregate({
+      _sum: { total: true },
+    }),
+  ]);
+
+  return {
+    total,
+    byStatus: Object.fromEntries(byStatus.map((s) => [s.status, s._count.status])),
+    revenue: Number(revenue._sum.total ?? 0),
+  };
+}

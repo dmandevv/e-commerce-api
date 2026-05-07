@@ -15,7 +15,10 @@ const mockUser = vi.hoisted(() => ({
   findOne: vi.fn(),   // Used by login (find by email) and register (check duplicate)
   findById: vi.fn(),  // Used by getProfile and getUserById
   create: vi.fn(),    // Used by register (create new user)
+  findByIdAndDelete: vi.fn(),
   findByIdAndUpdate: vi.fn(),
+  countDocuments: vi.fn(),
+  find: vi.fn(),
 }));
 
 // ─── Mock the User model ────────────────────────────────
@@ -70,6 +73,10 @@ vi.mock('./config/index.js', () => ({
 
 // ─── Mock swagger (avoid loading the real spec) ─────────
 vi.mock('./swagger.js', () => ({ default: {} }));
+
+// getAdminStats calls order-service
+const mockFetch = vi.hoisted(() => vi.fn());
+vi.stubGlobal('fetch', mockFetch);
 
 // ─── Mock blacklist (no real Redis connection) ──────────
 // Auth middleware checks the blacklist on every request. We return `false`
@@ -780,5 +787,160 @@ describe('DELETE /api/users/addresses/:addressId', () => {
       .set('Authorization', `Bearer ${createToken('user123')}`)
     );
     expect(res.status).toBe(204);
+  });
+});
+
+
+describe('GET /api/users/admin', () => {
+  it('should return 403 if user is not admin', async () => {
+    const res = await request(app)
+      .get('/api/users/admin')
+      .set('Authorization', `Bearer ${createToken('user123', 'customer')}`);
+    expect(res.status).toBe(403);
+  });
+
+  it('should return paginated user list for admin', async () => {
+    const fakeUsers = [
+      { _id: { toString: () => 'u1' }, name: 'Alice', email: 'alice@test.com', role: 'customer' },
+      { _id: { toString: () => 'u2' }, name: 'Bob', email: 'bob@test.com', role: 'customer' },
+    ];
+    mockUser.find.mockReturnValue({
+      select: vi.fn().mockReturnThis(),
+      sort: vi.fn().mockReturnThis(),
+      skip: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockResolvedValue(fakeUsers),
+    });
+    mockUser.countDocuments.mockResolvedValue(2);
+
+    const res = await request(app)
+      .get('/api/users/admin')
+      .set('Authorization', `Bearer ${createToken('admin1', 'admin')}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.users).toHaveLength(2);
+    expect(res.body.data.total).toBe(2);
+    expect(res.body.data.pages).toBe(1);
+  });
+});
+
+describe('PATCH /api/users/admin/:id', () => {
+  it('should return 403 if user is not admin', async () => {
+    const res = await withCsrf(
+      request(app)
+        .patch('/api/users/admin/user123')
+        .set('Authorization', `Bearer ${createToken('user123', 'customer')}`)
+        .send({ role: 'admin' })
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('should return 400 if role is invalid', async () => {
+    const res = await withCsrf(
+      request(app)
+        .patch('/api/users/admin/user123')
+        .set('Authorization', `Bearer ${createToken('admin1', 'admin')}`)
+        .send({ role: 'superuser' })
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('should return 403 if admin tries to demote themselves', async () => {
+    const res = await withCsrf(
+      request(app)
+        .patch('/api/users/admin/admin1')
+        .set('Authorization', `Bearer ${createToken('admin1', 'admin')}`)
+        .send({ role: 'customer' })
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('should update role and return updated user', async () => {
+    mockUser.findByIdAndUpdate.mockResolvedValue({
+      _id: { toString: () => 'user123' },
+      name: 'Alice',
+      email: 'alice@test.com',
+      role: 'admin',
+    });
+    const res = await withCsrf(
+      request(app)
+        .patch('/api/users/admin/user123')
+        .set('Authorization', `Bearer ${createToken('admin1', 'admin')}`)
+        .send({ role: 'admin' })
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.data.role).toBe('admin');
+  });
+});
+
+describe('DELETE /api/users/admin/:id', () => {
+  it('should return 403 if user is not admin', async () => {
+    const res = await request(app)
+      .delete('/api/users/admin/user123')
+      .set('Authorization', `Bearer ${createToken('user123', 'customer')}`);
+    expect(res.status).toBe(403);
+  });
+
+  it('should return 403 if target is an admin', async () => {
+    mockUser.findById.mockResolvedValue({ role: 'admin' });
+    const res = await withCsrf(
+      request(app)
+        .delete('/api/users/admin/otheradmin')
+        .set('Authorization', `Bearer ${createToken('admin1', 'admin')}`)
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('should return 403 if admin tries to delete themselves', async () => {
+    mockUser.findById.mockResolvedValue({ role: 'customer' });
+    const res = await withCsrf(
+      request(app)
+        .delete('/api/users/admin/admin1')
+        .set('Authorization', `Bearer ${createToken('admin1', 'admin')}`)
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('should delete user and return 200', async () => {
+    mockUser.findById.mockResolvedValue({ role: 'customer' });
+    mockUser.findByIdAndDelete.mockResolvedValue({});
+    const res = await withCsrf(
+      request(app)
+        .delete('/api/users/admin/user123')
+        .set('Authorization', `Bearer ${createToken('admin1', 'admin')}`)
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
+});
+
+describe('GET /api/users/admin/stats', () => {
+  it('should return 403 if user is not admin', async () => {
+    const res = await request(app)
+      .get('/api/users/admin/stats')
+      .set('Authorization', `Bearer ${createToken('user123', 'customer')}`);
+    expect(res.status).toBe(403);
+  });
+
+  it('should return aggregated stats', async () => {
+    mockUser.countDocuments
+      .mockResolvedValueOnce(100)  // total users
+      .mockResolvedValueOnce(3)    // admins
+      .mockResolvedValueOnce(1);   // locked
+
+    mockFetch.mockResolvedValue({
+      json: async () => ({
+        success: true,
+        data: { total: 50, byStatus: { PAID: 30, PENDING: 20 }, revenue: 9999.99 },
+      }),
+    });
+
+    const res = await request(app)
+      .get('/api/users/admin/stats')
+      .set('Authorization', `Bearer ${createToken('admin1', 'admin')}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.users).toEqual({ total: 100, admins: 3, locked: 1 });
+    expect(res.body.data.orders).toEqual({ total: 50, byStatus: { PAID: 30, PENDING: 20 } });
+    expect(res.body.data.revenue).toEqual({ total: 9999.99 });
   });
 });
