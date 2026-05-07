@@ -12,6 +12,8 @@ const mockOrderService = vi.hoisted(() => ({
   getOrderById: vi.fn(),
   getUserOrders: vi.fn(),
   updateOrderStatus: vi.fn(),
+  getAllOrders: vi.fn(),
+  getOrderStats: vi.fn(),
 }));
 
 // ─── Mock orderService ──────────────────────────────────
@@ -42,7 +44,7 @@ vi.mock('./lib/blacklist.js', () => ({
 
 // ─── Import app AFTER mocks ─────────────────────────────
 import { app } from './app.js';
-import { z, ORDER_STATUSES, NotFoundError } from '@ecommerce/shared';
+import { ORDER_STATUSES, NotFoundError } from '@ecommerce/shared';
 
 // ─── Constants & Helpers ────────────────────────────────
 const JWT_SECRET = 'test-secret-key';
@@ -209,5 +211,43 @@ describe('PATCH /api/orders/:id/status', () => {
       .send({ status: 'PAID' });
 
     expect(res.status).toBe(403);
+  });
+});
+
+describe('GET /api/orders/admin', () => {
+  it('should return 403 for non-admin', async () => {
+    const res = await request(app)
+      .get('/api/orders/admin')
+      .set('Authorization', `Bearer ${customerToken}`);
+    expect(res.status).toBe(403);
+  });
+
+  it('should return all orders for admin', async () => {
+    mockOrderService.getAllOrders.mockResolvedValue({
+      orders: [fakeOrder],
+      total: 1,
+      page: 1,
+      pages: 1,
+    });
+    const res = await request(app)
+      .get('/api/orders/admin')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.orders).toHaveLength(1);
+    expect(res.body.data.total).toBe(1);
+  });
+});
+
+describe('GET /api/orders/internal/stats', () => {
+  it('should return order stats without auth', async () => {
+    mockOrderService.getOrderStats.mockResolvedValue({
+      total: 10,
+      byStatus: { PENDING: 5, PAID: 5 },
+      revenue: 500,
+    });
+    const res = await request(app).get('/api/orders/internal/stats');
+    expect(res.status).toBe(200);
+    expect(res.body.data.total).toBe(10);
+    expect(res.body.data.revenue).toBe(500);
   });
 });

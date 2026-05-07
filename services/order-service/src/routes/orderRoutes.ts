@@ -14,10 +14,10 @@ router.use(authenticate);
 
 router.post('/', validate(placeOrderSchema), asyncHandler(placeOrder));
 router.get('/mine', asyncHandler(getMyOrders));
+router.get('/admin', authorize('admin'), asyncHandler(getAllOrders));
 router.get('/:id', asyncHandler(getOrder));
 
 // Admin only
 router.patch('/:id/status', authorize('admin'), sanitizeBody, validate(updateStatusSchema), asyncHandler(updateStatus));
-router.get('/admin', authorize('admin'), asyncHandler(getAllOrders));
 
 export default router;
