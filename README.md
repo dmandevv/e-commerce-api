@@ -1,5 +1,7 @@
 # E-Commerce API
 
+NO LONGER RUNNING
+
 A production-grade, event-driven microservices platform built with Node.js, TypeScript, and modern cloud-native tooling.
 
 > **Live Demo:** [dmandevv.shop](https://dmandevv.shop)
